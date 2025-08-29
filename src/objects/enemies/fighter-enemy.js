@@ -2,6 +2,7 @@ import { ColliderComponent } from '../../components/collider/collider-component.
 import { CUSTOM_EVENTS, EventBusComponent } from '../../components/events/event-bus-component.js';
 import { HealthComponent } from '../../components/health/health-component.js';
 import { BotFighterInputComponent } from '../../components/input/bot-fighter-input-component.js';
+import { HorizontalMovementComponent } from '../../components/movement/horizontal-movement-component.js';
 import { VerticalMovementComponent } from '../../components/movement/vertical-movement-component.js';
 import { WeaponComponent } from '../../components/weapon/weapon-component.js';
 import * as CONFIG from '../../config.js';
@@ -18,6 +19,8 @@ export class FighterEnemy extends Phaser.GameObjects.Container {
   #inputComponent;
   /** @type {VerticalMovementComponent} */
   #verticalMovementComponent;
+  /** @type {HorizontalMovementComponent} */
+  #horizontalMovementComponent;
   /** @type {HealthComponent} */
   #healthComponent;
   /** @type {ColliderComponent} */
@@ -101,6 +104,11 @@ export class FighterEnemy extends Phaser.GameObjects.Container {
       this.#inputComponent,
       CONFIG.ENEMY_FIGHTER_MOVEMENT_VERTICAL_VELOCITY
     );
+    this.#horizontalMovementComponent = new HorizontalMovementComponent(
+      this,
+      this.#inputComponent,
+      CONFIG.ENEMY_FIGHTER_MOVEMENT_HORIZONTAL_VELOCITY
+    );
     this.#weaponComponent = new WeaponComponent(
       this,
       this.#inputComponent,
@@ -127,7 +135,9 @@ export class FighterEnemy extends Phaser.GameObjects.Container {
     this.setActive(true);
     this.setVisible(true);
     this.#healthComponent.reset();
+    this.#inputComponent.reset();
     this.#verticalMovementComponent.reset();
+    this.#horizontalMovementComponent.reset();
   }
 
   /**
@@ -150,8 +160,9 @@ export class FighterEnemy extends Phaser.GameObjects.Container {
       this.#eventBusComponent.emit(CUSTOM_EVENTS.ENEMY_DESTROYED, this);
     }
 
-    this.#inputComponent.update();
+    this.#inputComponent.update(dt);
     this.#verticalMovementComponent.update();
+    this.#horizontalMovementComponent.update();
     this.#weaponComponent.update(dt);
   }
 }

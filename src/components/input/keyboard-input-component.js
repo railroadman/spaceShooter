@@ -17,6 +17,7 @@ export class KeyboardInputComponent extends InputComponent {
    */
   constructor(scene) {
     super();
+    this.reset();
   
     this.#cursorKeys = scene.input.keyboard.createCursorKeys();
     this.#inputLocked = false;

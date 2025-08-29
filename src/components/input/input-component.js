@@ -22,7 +22,7 @@ export class InputComponent {
   _shoot;
 
   constructor() {
-    this.reset();
+    
   }
 
   /** @type {boolean} */
