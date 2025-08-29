@@ -22,7 +22,7 @@ export class AudioManager {
 
     // start background music
     this.#scene.sound.play('bg', {
-      volume: 0.3,
+      volume: 0.05,
       loop: true,
     });
 

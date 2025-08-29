@@ -137,5 +137,11 @@ export class GameScene extends Phaser.Scene {
 
     // audio
     new AudioManager(this, eventBusComponent);
+
+    // pause functionality
+    this.input.keyboard.on('keydown-ESC', () => {
+      this.scene.pause('GameScene');
+      this.scene.launch('PauseScene');
+    });
   }
 }
