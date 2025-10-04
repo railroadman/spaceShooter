@@ -41,13 +41,11 @@ export class Lives extends Phaser.GameObjects.Container {
         return;
       }
 
-      this.scene.add
-        .text(this.scene.scale.width / 2, this.scene.scale.height / 2, 'GAME OVER', {
-          fontSize: '24px',
-        })
-        .setOrigin(0.5);
-
       this.#eventBusComponent.emit(CUSTOM_EVENTS.GAME_OVER);
+
+      // Pause the game scene and launch the game over screen
+      this.scene.scene.pause('GameScene');
+      this.scene.scene.launch('GameOverScene');
     });
 
     this.#eventBusComponent.emit(CUSTOM_EVENTS.PLAYER_SPAWN);

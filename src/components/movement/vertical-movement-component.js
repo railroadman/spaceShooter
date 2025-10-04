@@ -22,8 +22,13 @@ export class VerticalMovementComponent {
    * @param {Phaser.Physics.Arcade.Sprite | Phaser.GameObjects.Container} gameObject
    * @param {InputComponent} inputComponent
    * @param {number} velocity
+   * @param {{ drag?: number, damping?: boolean }} [options]
    */
-  constructor(gameObject, inputComponent, velocity) {
+  constructor(gameObject, inputComponent, velocity, options = {}) {
+    const {
+      drag = CONFIG.COMPONENT_MOVEMENT_VERTICAL_DRAG,
+      damping = true,
+    } = options;
     this.#gameObject = gameObject;
     this.#inputComponent = inputComponent;
     this.#velocity = velocity;
@@ -31,8 +36,8 @@ export class VerticalMovementComponent {
     if (!isSpriteWithDynamicBody(this.#gameObject.body)) {
       return;
     }
-    this.#gameObject.body.setDamping(true);
-    this.#gameObject.body.setDrag(CONFIG.COMPONENT_MOVEMENT_VERTICAL_DRAG);
+    this.#gameObject.body.setDamping(damping);
+    this.#gameObject.body.setDrag(drag);
     this.#gameObject.body.setMaxVelocity(CONFIG.COMPONENT_MOVEMENT_VERTICAL_MAX_VELOCITY);
   }
 

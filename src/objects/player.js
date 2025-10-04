@@ -2,8 +2,8 @@ import { ColliderComponent } from '../components/collider/collider-component.js'
 import { CUSTOM_EVENTS, EventBusComponent } from '../components/events/event-bus-component.js';
 import { HealthComponent } from '../components/health/health-component.js';
 import { KeyboardInputComponent } from '../components/input/keyboard-input-component.js';
-
-import { HorizontalMovementComponent } from '../components/movement/horizontal-movement-component.js';
+import { PlayerHorizontalMovementComponent } from '../components/movement/player-horizontal-movement-component.js';
+import { PlayerVerticalMovementComponent } from '../components/movement/player-vertical-movement-component.js';
 import { WeaponComponent } from '../components/weapon/weapon-component.js';
 import * as CONFIG from '../config.js';
 
@@ -18,8 +18,10 @@ export class Player extends Phaser.GameObjects.Container {
   #healthComponent;
   /** @type {WeaponComponent} */
   #weaponComponent;
-  /** @type {HorizontalMovementComponent} */
+  /** @type {PlayerHorizontalMovementComponent} */
   #horizontalMovementComponent;
+  /** @type {PlayerVerticalMovementComponent} */
+  #verticalMovementComponent;
   /** @type {ColliderComponent} */
   #colliderComponent;
   /** @type {EventBusComponent} */
@@ -54,13 +56,20 @@ export class Player extends Phaser.GameObjects.Container {
     this.add([this.#shipEngineThrusterSprite, this.#shipEngineSprite, this.#shipSprite]);
 
     this.#keyboardInputComponent = new KeyboardInputComponent(this.scene);
-    this.#horizontalMovementComponent = new HorizontalMovementComponent(
+    this.#horizontalMovementComponent = new PlayerHorizontalMovementComponent(
       this,
       this.#keyboardInputComponent,
-      CONFIG.PLAYER_MOVEMENT_HORIZONTAL_VELOCITY,
       {
-        damping: false,
-        drag: 0,
+        velocity: CONFIG.PLAYER_MOVEMENT_HORIZONTAL_VELOCITY,
+        maxVelocity: CONFIG.COMPONENT_MOVEMENT_HORIZONTAL_MAX_VELOCITY,
+      }
+    );
+    this.#verticalMovementComponent = new PlayerVerticalMovementComponent(
+      this,
+      this.#keyboardInputComponent,
+      {
+        velocity: CONFIG.PLAYER_MOVEMENT_VERTICAL_VELOCITY,
+        maxVelocity: CONFIG.COMPONENT_MOVEMENT_VERTICAL_MAX_VELOCITY,
       }
     );
     this.#weaponComponent = new WeaponComponent(
@@ -138,6 +147,7 @@ export class Player extends Phaser.GameObjects.Container {
     this.#shipSprite.setFrame((CONFIG.PLAYER_HEALTH - this.#healthComponent.life).toString(10));
     this.#keyboardInputComponent.update();
     this.#horizontalMovementComponent.update();
+    this.#verticalMovementComponent.update();
     this.#weaponComponent.update(dt);
   }
 

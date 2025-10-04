@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.2.0] - 2025-10-04
+
+### Added
+- **Pause Scene:** Players can now pause the game by pressing the 'ESC' key. This opens a dedicated pause menu.
+
 ## [1.1.0] - 2025-08-29
 
 ### Added

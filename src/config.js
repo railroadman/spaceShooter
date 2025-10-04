@@ -6,6 +6,9 @@ export const PLAYER_BULLET_INTERVAL = 300;
 export const PLAYER_BULLET_LIFESPAN = 3;
 export const PLAYER_BULLET_MAX_COUNT = 10;
 export const PLAYER_MOVEMENT_HORIZONTAL_VELOCITY = 90;
+export const PLAYER_MOVEMENT_VERTICAL_VELOCITY = 90;
+export const PLAYER_ACCELERATION = 450;
+export const PLAYER_DRAG = 0.45;
 
 // enemy fighter config
 export const ENEMY_FIGHTER_SCORE = 200;

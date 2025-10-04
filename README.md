@@ -26,6 +26,7 @@ Currently, the only supported way to play the game is with a Keyboard.
 | --------------------------- | -------------------------------------- |
 | Arrow Keys (Left and Right) | Moves the players ship back and forth. |
 | Spacebar                    | Fire main weapon.                      |
+| ESC                         | Pauses the game.                       |
 
 ## Credits
 
