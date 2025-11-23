@@ -15,7 +15,7 @@ export class Lives extends Phaser.GameObjects.Container {
    * @param {EventBusComponent} eventBusComponent
    */
   constructor(scene, eventBusComponent) {
-    super(scene, 5, scene.scale.height - 30, []);
+    super(scene, 0, 0, []);
     this.#eventBusComponent = eventBusComponent;
     this.#lives = CONFIG.PLAYER_LIVES;
     this.scene.add.existing(this);

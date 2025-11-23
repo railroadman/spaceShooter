@@ -20,7 +20,7 @@ export class Score extends Phaser.GameObjects.Text {
    * @param {EventBusComponent} eventBusComponent
    */
   constructor(scene, eventBusComponent) {
-    super(scene, scene.scale.width / 2, 20, '0', {
+    super(scene, 0, 0, '0', {
       fontSize: '24px',
       color: '#ff2f66',
     });

@@ -25,9 +25,14 @@ export class GameScene extends Phaser.Scene {
    */
   create() {
     // backgrounds
-    this.add.sprite(0, 0, 'bg1', 0).setOrigin(0, 1).setAlpha(0.7).play('bg1').setAngle(90).setScale(1, 1.25);
-    this.add.sprite(0, 0, 'bg2', 0).setOrigin(0, 1).setAlpha(0.7).play('bg2').setAngle(90).setScale(1, 1.25);
-    this.add.sprite(0, 0, 'bg3', 0).setOrigin(0, 1).setAlpha(0.7).play('bg3').setAngle(90).setScale(1, 1.25);
+    this.backgrounds = [
+      this.add.sprite(0, 0, 'bg1', 0).setOrigin(0, 1).setAlpha(0.7).play('bg1').setAngle(90),
+      this.add.sprite(0, 0, 'bg2', 0).setOrigin(0, 1).setAlpha(0.7).play('bg2').setAngle(90),
+      this.add.sprite(0, 0, 'bg3', 0).setOrigin(0, 1).setAlpha(0.7).play('bg3').setAngle(90),
+    ];
+    this.resizeBgs();
+    this.scale.on('resize', this.resizeBgs, this);
+
     // common components
     const eventBusComponent = new EventBusComponent();
 
@@ -132,8 +137,10 @@ export class GameScene extends Phaser.Scene {
     );
 
     // ui
-    new Score(this, eventBusComponent);
-    new Lives(this, eventBusComponent);
+    this.score = new Score(this, eventBusComponent);
+    this.lives = new Lives(this, eventBusComponent);
+    this.repositionUI();
+    this.scale.on('resize', this.repositionUI, this);
 
     // audio
     new AudioManager(this, eventBusComponent);
@@ -142,6 +149,22 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-ESC', () => {
       this.scene.pause('GameScene');
       this.scene.launch('PauseScene');
+    });
+  }
+
+  repositionUI() {
+    if (!this.score || !this.lives) {
+      return;
+    }
+    this.score.setPosition(this.cameras.main.width / 2, 20);
+    this.lives.setPosition(15, this.cameras.main.height - 20);
+  }
+
+  resizeBgs() {
+    const { width, height } = this.cameras.main;
+    this.backgrounds.forEach((bg) => {
+      bg.displayWidth = width;
+      bg.displayHeight = height;
     });
   }
 }
