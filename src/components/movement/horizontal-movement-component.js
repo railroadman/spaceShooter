@@ -54,12 +54,6 @@ export class HorizontalMovementComponent {
       return;
     }
 
-    if (this.#inputComponent.leftIsDown) {
-      this.#gameObject.body.setVelocityX(-this.#velocity);
-    } else if (this.#inputComponent.rightIsDown) {
-      this.#gameObject.body.setVelocityX(this.#velocity);
-    } else {
-      this.#gameObject.body.setVelocityX(0);
-    }
+    this.#gameObject.body.setVelocityX(this.#inputComponent.horizontalAxis * this.#velocity);
   }
 }

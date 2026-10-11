@@ -23,8 +23,8 @@ export class Lives extends Phaser.GameObjects.Container {
     // create life icons
     for (let i = 0; i < this.#lives; i += 1) {
       const ship = scene.add
-        .image(i * 20, 0, 'ship')
-        .setScale(0.6)
+        .image(i * CONFIG.UI_LIVES_ICON_SPACING, 0, 'ship')
+        .setScale(CONFIG.UI_LIVES_ICON_SCALE)
         .setOrigin(0);
       this.add(ship);
     }
@@ -32,10 +32,10 @@ export class Lives extends Phaser.GameObjects.Container {
     this.#eventBusComponent.on(CUSTOM_EVENTS.PLAYER_DESTROYED, () => {
       this.#lives -= 1;
       this.getAt(this.#lives).destroy();
-      this.scene.cameras.main.shake(500, 0.01);
+      this.scene.cameras.main.shake(CONFIG.PLAYER_DEATH_SHAKE_DURATION, CONFIG.PLAYER_DEATH_SHAKE_INTENSITY);
 
       if (this.#lives > 0) {
-        scene.time.delayedCall(1500, () => {
+        scene.time.delayedCall(CONFIG.PLAYER_RESPAWN_DELAY, () => {
           this.#eventBusComponent.emit(CUSTOM_EVENTS.PLAYER_SPAWN);
         });
         return;
@@ -46,6 +46,15 @@ export class Lives extends Phaser.GameObjects.Container {
       // Pause the game scene and launch the game over screen
       this.scene.scene.pause('GameScene');
       this.scene.scene.launch('GameOverScene');
+    });
+
+    this.#eventBusComponent.on(CUSTOM_EVENTS.EXTRA_LIFE, () => {
+      const ship = scene.add
+        .image(this.#lives * CONFIG.UI_LIVES_ICON_SPACING, 0, 'ship')
+        .setScale(CONFIG.UI_LIVES_ICON_SCALE)
+        .setOrigin(0);
+      this.add(ship);
+      this.#lives += 1;
     });
 
     this.#eventBusComponent.emit(CUSTOM_EVENTS.PLAYER_SPAWN);

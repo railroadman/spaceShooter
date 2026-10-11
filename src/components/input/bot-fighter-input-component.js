@@ -1,17 +1,30 @@
 import { InputComponent } from './input-component.js';
+import { ChaseMovementPattern, DashMovementPattern } from '../movement/movement-patterns.js';
 import * as CONFIG from '../../config.js';
 
 /**
  * A custom `InputComponent` for the `Fighter` enemy.
- * The enemy will move down the screen while firing its weapon.
- * It will also patrol left and right, switching direction based on a timer.
+ * The fighter flies down while firing, eases toward the horizontal position of the
+ * player and from time to time performs a dash (slow-down wind-up first, then a burst of speed).
  */
 export class BotFighterInputComponent extends InputComponent {
-  /** @type {number} */
-  #patrolTimer;
+  /** @type {import('../../objects/player.js').Player} */
+  #player;
+  /** @type {DashMovementPattern} */
+  #pattern;
+  /** @type {import('../movement/movement-patterns.js').MovementOutput} */
+  #output = { axisX: 0, speedScale: 1 };
 
-  constructor() {
+  /**
+   * @param {import('../../objects/player.js').Player} player
+   */
+  constructor(player) {
     super();
+    this.#player = player;
+    this.#pattern = new DashMovementPattern(
+      new ChaseMovementPattern(CONFIG.ENEMY_FIGHTER_CHASE_RANGE, CONFIG.ENEMY_FIGHTER_CHASE_SMOOTHING),
+      CONFIG.ENEMY_FIGHTER_DASH
+    );
     this.reset();
   }
 
@@ -19,21 +32,17 @@ export class BotFighterInputComponent extends InputComponent {
     super.reset();
     this._down = true;
     this._shoot = true;
-    this._right = true; // Start by moving right
-    this.#patrolTimer = CONFIG.ENEMY_FIGHTER_PATROL_DURATION;
+    this.#pattern.reset();
   }
 
   /**
    * @param {number} dt Delta time in ms
+   * @param {import('../../objects/enemies/fighter-enemy.js').FighterEnemy} enemy
+   * @returns {void}
    */
-  update(dt) {
-    this.#patrolTimer -= dt;
-    if (this.#patrolTimer <= 0) {
-      // Switch direction
-      this._left = !this._left;
-      this._right = !this._right;
-      // Reset timer
-      this.#patrolTimer = CONFIG.ENEMY_FIGHTER_PATROL_DURATION;
-    }
+  update(dt, enemy) {
+    this.#pattern.update(dt, enemy, this.#player, this.#output);
+    this._horizontalAxis = this.#output.axisX;
+    this._verticalSpeedScale = this.#output.speedScale;
   }
 }

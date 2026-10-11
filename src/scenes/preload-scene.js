@@ -21,6 +21,8 @@ export class PreloadScene extends Phaser.Scene {
    * @returns {void}
    */
   create() {
+    // loaded sprites are pixel art: keep them crisp; procedural background textures stay smooth
+    Object.values(this.textures.list).forEach((texture) => texture.setFilter(Phaser.Textures.FilterMode.NEAREST));
     this.#createAnimations();
     this.scene.start('GameScene');
   }

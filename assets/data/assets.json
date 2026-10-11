@@ -55,24 +55,6 @@
       },
       {
         "type": "spritesheet",
-        "key": "bg1",
-        "url": "bg1.png",
-        "frameConfig": { "frameWidth": 640, "frameHeight": 360 }
-      },
-      {
-        "type": "spritesheet",
-        "key": "bg2",
-        "url": "bg2.png",
-        "frameConfig": { "frameWidth": 640, "frameHeight": 360 }
-      },
-      {
-        "type": "spritesheet",
-        "key": "bg3",
-        "url": "bg3.png",
-        "frameConfig": { "frameWidth": 640, "frameHeight": 360 }
-      },
-      {
-        "type": "spritesheet",
         "key": "ship",
         "url": "ship.png",
         "frameConfig": { "frameWidth": 48, "frameHeight": 48 }

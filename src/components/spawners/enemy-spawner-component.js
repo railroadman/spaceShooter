@@ -1,5 +1,6 @@
 import Phaser from '../../lib/phaser.js';
 import { CUSTOM_EVENTS, EventBusComponent } from '../events/event-bus-component.js';
+import * as CONFIG from '../../config.js';
 
 /**
  * Creates a Phaser 3 Group that is used for spawning enemy
@@ -19,8 +20,12 @@ export class EnemySpawnerComponent {
   #spawnAt;
   /** @type {Phaser.GameObjects.Group} */
   #group;
+  /** @type {{type: string, count: number}[]} */
+  #formations;
   /** @type {boolean} */
   #disableSpawning;
+  /** @type {import('../../objects/player.js').Player} */
+  #player;
 
   /**
    * @param {Phaser.Scene} scene
@@ -28,10 +33,13 @@ export class EnemySpawnerComponent {
    * @param {object} spawnConfig
    * @param {number} spawnConfig.interval
    * @param {number} spawnConfig.spawnAt
+   * @param {{type: string, count: number}[]} spawnConfig.formations formations to pick from on every spawn
    * @param {EventBusComponent} eventBusComponent
+   * @param {import('../../objects/player.js').Player} player
    */
-  constructor(scene, enemyClass, spawnConfig, eventBusComponent) {
+  constructor(scene, enemyClass, spawnConfig, eventBusComponent, player) {
     this.#scene = scene;
+    this.#player = player;
 
     // create group
     this.#group = this.#scene.add.group({
@@ -39,12 +47,13 @@ export class EnemySpawnerComponent {
       classType: enemyClass,
       runChildUpdate: true,
       createCallback: (/** @type {import('../../types/typedef.js').Enemy} */ enemy) => {
-        enemy.init(eventBusComponent);
+        enemy.init(eventBusComponent, this.#player);
       },
     });
 
     this.#spawnInterval = spawnConfig.interval;
     this.#spawnAt = spawnConfig.spawnAt;
+    this.#formations = spawnConfig.formations;
     this.#disableSpawning = false;
 
     // handle automatic call to update
@@ -83,10 +92,46 @@ export class EnemySpawnerComponent {
       return;
     }
 
-    const x = Phaser.Math.RND.between(30, this.#scene.scale.width - 30);
-    const enemy = this.#group.get(x, -20);
-    enemy.reset();
+    this.#spawnFormation(Phaser.Math.RND.pick(this.#formations));
     this.#spawnAt = this.#spawnInterval;
+  }
+
+  /**
+   * Spawns a group of enemies above the screen: a single ship, a horizontal 'line',
+   * or a 'v' whose middle ship leads and the others follow with a delay (enemies cannot
+   * wait above the screen, their movement keeps them at y >= 0). Ships stay inside the margins.
+   * @param {{type: string, count: number}} formation
+   * @returns {void}
+   */
+  #spawnFormation(formation) {
+    const margin = CONFIG.SPAWN_MARGIN_X;
+    const width = this.#scene.scale.width;
+    const half = (formation.count - 1) / 2;
+    const span = half * CONFIG.FORMATION_SPACING_X;
+    const centerX = Phaser.Math.RND.between(margin + span, width - margin - span);
+
+    for (let i = 0; i < formation.count; i += 1) {
+      const offset = i - half;
+      const x = centerX + offset * CONFIG.FORMATION_SPACING_X;
+      const delay = formation.type === 'v' ? Math.abs(offset) * CONFIG.FORMATION_STAGGER_DELAY : 0;
+      if (delay === 0) {
+        this.#spawnOne(x);
+      } else {
+        this.#scene.time.delayedCall(delay, () => this.#spawnOne(x));
+      }
+    }
+  }
+
+  /**
+   * @param {number} x
+   * @returns {void}
+   */
+  #spawnOne(x) {
+    if (this.#disableSpawning) {
+      return;
+    }
+    const enemy = this.#group.get(x, CONFIG.SPAWN_OFFSET_Y);
+    enemy.reset();
   }
 
   /**
@@ -99,7 +144,7 @@ export class EnemySpawnerComponent {
         return;
       }
 
-      if (enemy.y > this.#scene.scale.height + 50) {
+      if (enemy.y > this.#scene.scale.height + CONFIG.DESPAWN_MARGIN_Y) {
         enemy.setActive(false);
         enemy.setVisible(false);
       }

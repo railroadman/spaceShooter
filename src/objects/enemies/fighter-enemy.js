@@ -45,11 +45,11 @@ export class FighterEnemy extends Phaser.GameObjects.Container {
     this.#isInitialized = false;
     this.scene.add.existing(this);
     this.scene.physics.add.existing(this);
-    this.body.setSize(24, 24);
-    this.body.setOffset(-12, -12);
+    this.body.setSize(CONFIG.ENEMY_BODY_SIZE, CONFIG.ENEMY_BODY_SIZE);
+    this.body.setOffset(-CONFIG.ENEMY_BODY_SIZE / 2, -CONFIG.ENEMY_BODY_SIZE / 2);
 
     this.#shipSprite = scene.add.sprite(0, 0, 'fighter', 0);
-    this.#shipEngineSprite = scene.add.sprite(0, 0, 'fighter_engine').setFlipY(true);
+    this.#shipEngineSprite = scene.add.sprite(0, 0, 'fighter_engine').setFlipY(true).setBlendMode(Phaser.BlendModes.ADD);
     this.#shipEngineSprite.play('fighter_engine');
     this.add([this.#shipEngineSprite, this.#shipSprite]);
 
@@ -95,10 +95,11 @@ export class FighterEnemy extends Phaser.GameObjects.Container {
 
   /**
    * @param {EventBusComponent} eventBusComponent
+   * @param {import('../../objects/player.js').Player} player
    */
-  init(eventBusComponent) {
+  init(eventBusComponent, player) {
     this.#eventBusComponent = eventBusComponent;
-    this.#inputComponent = new BotFighterInputComponent();
+    this.#inputComponent = new BotFighterInputComponent(player);
     this.#verticalMovementComponent = new VerticalMovementComponent(
       this,
       this.#inputComponent,
@@ -117,8 +118,9 @@ export class FighterEnemy extends Phaser.GameObjects.Container {
         interval: CONFIG.ENEMY_FIGHTER_BULLET_INTERVAL,
         lifespan: CONFIG.ENEMY_FIGHTER_BULLET_LIFESPAN,
         maxCount: CONFIG.ENEMY_FIGHTER_BULLET_MAX_COUNT,
-        yOffset: 10,
+        yOffset: CONFIG.ENEMY_BULLET_Y_OFFSET,
         flipY: true,
+        angles: CONFIG.ENEMY_FIGHTER_SPREAD_ANGLES,
       },
       this.#eventBusComponent
     );
@@ -160,7 +162,7 @@ export class FighterEnemy extends Phaser.GameObjects.Container {
       this.#eventBusComponent.emit(CUSTOM_EVENTS.ENEMY_DESTROYED, this);
     }
 
-    this.#inputComponent.update(dt);
+    this.#inputComponent.update(dt, this);
     this.#verticalMovementComponent.update();
     this.#horizontalMovementComponent.update();
     this.#weaponComponent.update(dt);

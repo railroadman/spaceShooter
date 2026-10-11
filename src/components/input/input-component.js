@@ -20,6 +20,10 @@ export class InputComponent {
   _right;
   /** @protected @type {boolean} */
   _shoot;
+  /** @protected @type {number | null} analog horizontal direction -1..1; null = use left/right flags */
+  _horizontalAxis = null;
+  /** @protected @type {number} multiplier of the base vertical speed */
+  _verticalSpeedScale = 1;
 
   constructor() {
     
@@ -45,6 +49,26 @@ export class InputComponent {
     return this._up;
   }
 
+  /**
+   * Horizontal direction as a number from -1 (left) to 1 (right). Analog when the input
+   * sets it (AI patterns), otherwise derived from the left/right flags.
+   * @type {number}
+   */
+  get horizontalAxis() {
+    if (this._horizontalAxis !== null) {
+      return this._horizontalAxis;
+    }
+    if (this._left) {
+      return -1;
+    }
+    return this._right ? 1 : 0;
+  }
+
+  /** @type {number} */
+  get verticalSpeedScale() {
+    return this._verticalSpeedScale;
+  }
+
   /** @type {boolean} */
   get shootIsDown() {
     return this._shoot;
@@ -60,5 +84,7 @@ export class InputComponent {
     this._right = false;
     this._left = false;
     this._shoot = false;
+    this._horizontalAxis = null;
+    this._verticalSpeedScale = 1;
   }
 }

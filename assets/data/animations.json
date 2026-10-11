@@ -41,23 +41,5 @@
     "frameRate": 12,
     "repeat": 0,
     "assetKey": "fighter_destroy"
-  },
-  {
-    "key": "bg1",
-    "frameRate": 8,
-    "repeat": -1,
-    "assetKey": "bg1"
-  },
-  {
-    "key": "bg2",
-    "frameRate": 8,
-    "repeat": -1,
-    "assetKey": "bg2"
-  },
-  {
-    "key": "bg3",
-    "frameRate": 8,
-    "repeat": -1,
-    "assetKey": "bg3"
   }
 ]

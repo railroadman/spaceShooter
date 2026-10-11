@@ -1,4 +1,5 @@
 import Phaser from '../lib/phaser.js';
+import { getTextStyle } from '../objects/ui/ui-style.js';
 
 /**
  * A scene that displays a "Game Over" message and allows the player to restart.
@@ -11,30 +12,34 @@ export class GameOverScene extends Phaser.Scene {
   create() {
     this.cameras.main.setBackgroundColor('rgba(0, 0, 0, 0.75)');
 
-    const centerX = this.cameras.main.width / 2;
-    const centerY = this.cameras.main.height / 2;
-
-    this.add
-      .text(centerX, centerY - 40, 'GAME OVER', {
-        fontFamily: 'monospace',
-        fontSize: '48px',
-        color: '#ff0000',
-        align: 'center',
-      })
+    this.titleText = this.add
+      .text(0, 0, 'GAME OVER', getTextStyle(this, 'danger'))
       .setOrigin(0.5, 0.5);
 
-    this.add
-      .text(centerX, centerY + 20, 'Press Enter to Restart', {
-        fontFamily: 'monospace',
-        fontSize: '24px',
-        color: '#ffffff',
-        align: 'center',
-      })
+    this.hintText = this.add
+      .text(0, 0, 'PRESS ENTER TO RESTART', getTextStyle(this, 'body'))
       .setOrigin(0.5, 0.5);
+
+    this.layout();
+    this.scale.on('resize', this.layout, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scale.off('resize', this.layout, this);
+    });
 
     this.input.keyboard.on('keydown-ENTER', () => {
       this.sys.game.sound.stopAll();
       this.scene.start('GameScene');
     });
+  }
+
+  /**
+   * Centers the texts on the current camera size.
+   * @returns {void}
+   */
+  layout() {
+    const centerX = this.cameras.main.width / 2;
+    const centerY = this.cameras.main.height / 2;
+    this.titleText.setPosition(centerX, centerY - 40);
+    this.hintText.setPosition(centerX, centerY + 20);
   }
 }

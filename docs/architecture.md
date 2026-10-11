@@ -18,9 +18,10 @@ The project is organized into the following main directories:
 - **`/src`**: The main source code directory.
   - **`/components`**: Houses all reusable components. Each sub-directory corresponds to a specific type of functionality (e.g., `collider`, `input`, `weapon`).
   - **`/lib`**: Contains the Phaser 3 framework library.
-  - **`/objects`**: Defines the main game objects. It has sub-directories for `enemies` and `ui` elements.
+  - **`/objects`**: Defines the main game objects. It has sub-directories for `enemies`, `ui` elements and the `background`.
   - **`/scenes`**: Contains all game scenes.
   - **`/types`**: Holds type definitions for better code assistance and clarity.
+  - **`/utils`**: Small helpers without game state (e.g. `viewport.js` computes the world height for the window shape).
   - **`config.js`**: A central configuration file for game constants like speed, health, and spawn rates.
   - **`main.js`**: The main entry point of the game, where the Phaser Game instance is created.
 
@@ -56,6 +57,30 @@ Below is a breakdown of the most important classes and their roles.
 - **`WeaponComponent.js`**: A generic component for managing weapon systems, including firing rates, projectile pools, and bullet destruction.
 - **`HealthComponent.js`**: Manages the health of a game object, handling damage and death events.
 - **`EventBusComponent.js`**: A simple event bus used for communication between different components and game objects, decoupling them from each other.
+
+### Viewport
+
+World width is fixed (`GAME_WIDTH`), height follows the window shape and is clamped to `GAME_MIN_HEIGHT`..`GAME_MAX_HEIGHT`, so wide screens give no advantage. `utils/viewport.js` computes the height and the HUD safe area; `main.js` calls `scale.setGameSize` on window resize. Scenes listen to the Scale `resize` event and remove the listener on shutdown.
+
+### Background
+
+All textures are generated procedurally by `objects/background/space-textures.js` (no image files).
+
+- **`ParallaxLayer`**: one seamless scrolling `TileSprite`; speed from `BACKGROUND_LAYERS`, movement scaled by `delta`.
+- **`SpaceBackground`**: assembles the star layers and fast streaks, handles `update(delta)` and `resize(w, h)`. Speeds up while the player thrusts (`PLAYER_THRUST` event).
+- **`SpacePropSpawner`** (`components/spawners/`): pooled planets and nebulae that drift and fade in/out.
+
+### UI
+
+`objects/ui/ui-style.js` is the single source of HUD text styles (Orbitron font, colors and sizes come from `UI_*` in `config.js`). `Score` shows zero-padded points with a pop effect and pooled floating "+N" text. `PauseScene` and `GameOverScene` use the same styles and re-center on resize.
+
+### Enemy Behavior
+
+`components/movement/movement-patterns.js` holds trajectory strategies (wave, zigzag, chase, dash decorator). Bot input components pick a pattern per enemy type and drive left/right flags from it. `WeaponComponent` supports angled shots, bursts and aimed shots via options. `EnemySpawnerComponent` can spawn formations (line, V). All parameters live in `config.js`.
+
+### Rendering
+
+Renderer is `Phaser.AUTO` (WebGL with Canvas fallback), `antialias` on. Loaded sprites use NEAREST filtering to stay crisp; procedural background textures stay smooth. Engines and bullets use additive blending.
 
 ## Game Flow
 
@@ -114,6 +139,14 @@ classDiagram
     class KeyboardInputComponent
     class BotInputComponent
 
+    class SpaceBackground
+    class ParallaxLayer
+    class SpacePropSpawner
+    class Score
+    class MovementPattern {
+        <<Abstract>>
+    }
+
     class WeaponComponent
     class HealthComponent
     class HorizontalMovementComponent
@@ -121,6 +154,11 @@ classDiagram
 
     GameScene o-- Player
     GameScene o-- BaseEnemy
+    GameScene o-- SpaceBackground
+    GameScene o-- Score
+    SpaceBackground o-- ParallaxLayer
+    SpaceBackground o-- SpacePropSpawner
+    InputComponent ..> MovementPattern : bots use
 
     Player o-- "1" HealthComponent
     Player o-- "1" WeaponComponent

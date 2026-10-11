@@ -6,6 +6,8 @@ export const CUSTOM_EVENTS = Object.freeze({
   GAME_OVER: 'GAME_OVER',
   SHIP_HIT: 'SHIP_HIT',
   SHIP_SHOOT: 'SHIP_SHOOT',
+  PLAYER_THRUST: 'PLAYER_THRUST',
+  EXTRA_LIFE: 'EXTRA_LIFE',
 });
 
 /**

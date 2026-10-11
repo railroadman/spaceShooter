@@ -26,6 +26,10 @@ export class Player extends Phaser.GameObjects.Container {
   #colliderComponent;
   /** @type {EventBusComponent} */
   #eventBusComponent;
+  /** @type {boolean} */
+  #isThrusting = false;
+  /** @type {number} ms of invulnerability left */
+  #invulnerableTime = 0;
   /** @type {Phaser.GameObjects.Sprite} */
   #shipSprite;
   /** @type {Phaser.GameObjects.Sprite} */
@@ -38,21 +42,21 @@ export class Player extends Phaser.GameObjects.Container {
    * @param {EventBusComponent} eventBusComponent
    */
   constructor(scene, eventBusComponent) {
-    super(scene, scene.scale.width / 2, scene.scale.height - 32, []);
+    super(scene, scene.scale.width / 2, scene.scale.height - CONFIG.PLAYER_SPAWN_OFFSET_Y, []);
     this.#eventBusComponent = eventBusComponent;
 
     // add game object to scene and enabled physics body
     this.scene.add.existing(this);
     this.scene.physics.add.existing(this);
-    this.body.setSize(24, 24);
-    this.body.setOffset(-12, -12);
+    this.body.setSize(CONFIG.PLAYER_BODY_SIZE, CONFIG.PLAYER_BODY_SIZE);
+    this.body.setOffset(-CONFIG.PLAYER_BODY_SIZE / 2, -CONFIG.PLAYER_BODY_SIZE / 2);
     this.body.setCollideWorldBounds(true);
-    this.setDepth(2);
+    this.setDepth(CONFIG.PLAYER_DEPTH);
 
     this.#shipSprite = scene.add.sprite(0, 0, 'ship');
     this.#shipEngineSprite = scene.add.sprite(0, 0, 'ship_engine');
     this.#shipEngineThrusterSprite = scene.add.sprite(0, 0, 'ship_engine_thruster');
-    this.#shipEngineThrusterSprite.play('ship_engine_thruster');
+    this.#shipEngineThrusterSprite.play('ship_engine_thruster').setBlendMode(Phaser.BlendModes.ADD);
     this.add([this.#shipEngineThrusterSprite, this.#shipEngineSprite, this.#shipSprite]);
 
     this.#keyboardInputComponent = new KeyboardInputComponent(this.scene);
@@ -80,7 +84,7 @@ export class Player extends Phaser.GameObjects.Container {
         interval: CONFIG.PLAYER_BULLET_INTERVAL,
         lifespan: CONFIG.PLAYER_BULLET_LIFESPAN,
         maxCount: CONFIG.PLAYER_BULLET_MAX_COUNT,
-        yOffset: -20,
+        yOffset: CONFIG.PLAYER_BULLET_Y_OFFSET,
         flipY: false,
       },
       this.#eventBusComponent
@@ -145,10 +149,44 @@ export class Player extends Phaser.GameObjects.Container {
     }
 
     this.#shipSprite.setFrame((CONFIG.PLAYER_HEALTH - this.#healthComponent.life).toString(10));
+    this.#updateInvulnerability(dt);
     this.#keyboardInputComponent.update();
+    this.#updateThrust();
     this.#horizontalMovementComponent.update();
     this.#verticalMovementComponent.update();
     this.#weaponComponent.update(dt);
+  }
+
+  /**
+   * Counts down post-spawn invulnerability and blinks the ship while it lasts.
+   * @param {number} dt
+   * @returns {void}
+   */
+  #updateInvulnerability(dt) {
+    if (this.#invulnerableTime <= 0) {
+      return;
+    }
+    this.#invulnerableTime -= dt;
+    if (this.#invulnerableTime <= 0) {
+      this.#colliderComponent.isInvulnerable = false;
+      this.setAlpha(1);
+      return;
+    }
+    const phase = Math.floor(this.#invulnerableTime / CONFIG.PLAYER_BLINK_INTERVAL) % 2;
+    this.setAlpha(phase === 0 ? CONFIG.PLAYER_BLINK_ALPHA : 1);
+  }
+
+  /**
+   * Tells listeners (e.g. the space background) when forward thrust starts or stops.
+   * @returns {void}
+   */
+  #updateThrust() {
+    const isThrusting = this.#keyboardInputComponent.upIsDown;
+    if (isThrusting === this.#isThrusting) {
+      return;
+    }
+    this.#isThrusting = isThrusting;
+    this.#eventBusComponent.emit(CUSTOM_EVENTS.PLAYER_THRUST, isThrusting);
   }
 
   /**
@@ -172,7 +210,9 @@ export class Player extends Phaser.GameObjects.Container {
     this.#shipEngineThrusterSprite.setVisible(true);
     this.#shipSprite.setTexture('ship', 0);
     this.#healthComponent.reset();
-    this.setPosition(this.scene.scale.width / 2, this.scene.scale.height - 32);
+    this.#invulnerableTime = CONFIG.PLAYER_INVULNERABLE_DURATION;
+    this.#colliderComponent.isInvulnerable = true;
+    this.setPosition(this.scene.scale.width / 2, this.scene.scale.height - CONFIG.PLAYER_SPAWN_OFFSET_Y);
     
   }
 }

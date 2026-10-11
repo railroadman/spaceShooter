@@ -61,11 +61,19 @@ export class VerticalMovementComponent {
     }
 
     if (this.#inputComponent.downIsDown) {
-      this.#gameObject.body.setVelocityY(this.#velocity);
+      this.#gameObject.body.setVelocityY(this.#velocity * this.#inputComponent.verticalSpeedScale);
     } else if (this.#inputComponent.upIsDown) {
-      this.#gameObject.body.setVelocityY(-this.#velocity);
+      if (this.#gameObject.y > 0) {
+        this.#gameObject.body.setVelocityY(0);
+      } else {
+        this.#gameObject.body.setVelocityY(-this.#velocity);
+      }
     } else {
       this.#gameObject.body.setVelocityY(0);
+    }
+    
+    if (this.#gameObject.y < 0) {
+        this.#gameObject.y = 0;
     }
   }
 }

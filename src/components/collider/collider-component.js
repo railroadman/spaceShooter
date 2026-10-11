@@ -11,6 +11,17 @@ export class ColliderComponent {
   #healthComponent;
   /** @type {EventBusComponent} */
   #eventBusComponent;
+  /** @type {boolean} */
+  #isInvulnerable = false;
+
+  /** @type {boolean} */
+  get isInvulnerable() {
+    return this.#isInvulnerable;
+  }
+
+  set isInvulnerable(value) {
+    this.#isInvulnerable = value;
+  }
 
   /**
    * @param {HealthComponent} healthComponent
@@ -25,7 +36,7 @@ export class ColliderComponent {
    * @returns {void}
    */
   collideWithEnemyShip() {
-    if (this.#healthComponent.isDead) {
+    if (this.#isInvulnerable || this.#healthComponent.isDead) {
       return;
     }
     this.#healthComponent.die();
@@ -35,7 +46,7 @@ export class ColliderComponent {
    * @returns {void}
    */
   collideWithEnemyProjectile() {
-    if (this.#healthComponent.isDead) {
+    if (this.#isInvulnerable || this.#healthComponent.isDead) {
       return;
     }
     this.#healthComponent.hit();

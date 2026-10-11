@@ -11,7 +11,13 @@ import { CUSTOM_EVENTS, EventBusComponent } from '../events/event-bus-component.
  * @property {number} maxCount
  * @property {number} yOffset
  * @property {boolean} flipY
+ * @property {number[]} [angles] spread: one bullet per angle (degrees from straight), default [0]
+ * @property {{count: number, delay: number}} [burst] fire `count` volleys, `delay` ms apart
+ * @property {Phaser.GameObjects.Container} [aimTarget] aim volleys at this object
+ * @property {number} [maxAimAngle] limits aiming to this many degrees from straight (default 35)
  */
+
+const STRAIGHT = [0];
 
 /**
  * The `WeaponComponent` is used for enabling a game object to fire bullets
@@ -36,6 +42,10 @@ export class WeaponComponent {
   #bulletConfig;
   /** @type {EventBusComponent} */
   #eventBusComponent;
+  /** @type {number} volleys of the current burst that are still to be fired */
+  #burstLeft = 0;
+  /** @type {number} */
+  #burstTimer = 0;
 
   /**
    * @param {Phaser.GameObjects.Container} gameObject
@@ -81,30 +91,109 @@ export class WeaponComponent {
    * @returns {void}
    */
   update(dt) {
+    if (this.#gameObject.y < 0) {
+      return;
+    }
+
+    this.#updateBurst(dt);
+
     this.#fireBulletInterval -= dt;
     if (this.#fireBulletInterval > 0) {
       return;
     }
 
     if (this.#inputComponent.shootIsDown) {
-      const bullet = this.#bulletGroup.getFirstDead();
-      if (bullet === undefined || bullet === null) {
+      if (!this.#fireVolley()) {
         return;
       }
 
-      const x = this.#gameObject.x;
-      const y = this.#gameObject.y + this.#bulletConfig.yOffset;
-      bullet.enableBody(true, x, y, true, true);
-      bullet.body.velocity.y -= this.#bulletConfig.speed;
-      bullet.setState(this.#bulletConfig.lifespan);
-      bullet.play('bullet');
-      bullet.setScale(0.8);
-      bullet.body.setSize(14, 18);
-      bullet.setFlipY(this.#bulletConfig.flipY);
-
       this.#fireBulletInterval = this.#bulletConfig.interval;
+      this.#burstLeft = this.#bulletConfig.burst ? this.#bulletConfig.burst.count - 1 : 0;
+      this.#burstTimer = this.#bulletConfig.burst ? this.#bulletConfig.burst.delay : 0;
       this.#eventBusComponent.emit(CUSTOM_EVENTS.SHIP_SHOOT);
     }
+  }
+
+  /**
+   * Fires the follow-up volleys of a burst.
+   * @param {number} dt
+   * @returns {void}
+   */
+  #updateBurst(dt) {
+    if (this.#burstLeft <= 0) {
+      return;
+    }
+
+    this.#burstTimer -= dt;
+    if (this.#burstTimer > 0) {
+      return;
+    }
+
+    this.#fireVolley();
+    this.#burstLeft -= 1;
+    this.#burstTimer = this.#bulletConfig.burst.delay;
+  }
+
+  /**
+   * Fires one bullet per configured angle (a single straight bullet by default).
+   * @returns {boolean} true when at least one bullet was fired
+   */
+  #fireVolley() {
+    const angles = this.#bulletConfig.angles || STRAIGHT;
+    const aimAngle = this.#getAimAngle();
+    let fired = false;
+
+    for (let i = 0; i < angles.length; i += 1) {
+      const bullet = this.#bulletGroup.getFirstDead();
+      if (bullet === undefined || bullet === null) {
+        break;
+      }
+      this.#shoot(bullet, angles[i] + aimAngle);
+      fired = true;
+    }
+    return fired;
+  }
+
+  /**
+   * Angle in degrees from "straight" to the aim target, or 0 when there is no usable target.
+   * Targets behind the shooter are ignored and the angle is limited, so shots stay dodgeable.
+   * @returns {number}
+   */
+  #getAimAngle() {
+    const target = this.#bulletConfig.aimTarget;
+    if (!target || !target.active) {
+      return 0;
+    }
+
+    const forward = -Math.sign(this.#bulletConfig.speed);
+    const dx = target.x - this.#gameObject.x;
+    const dy = (target.y - this.#gameObject.y) * forward;
+    if (dy <= 0) {
+      return 0;
+    }
+
+    const max = this.#bulletConfig.maxAimAngle || 35;
+    return Phaser.Math.Clamp(Phaser.Math.RadToDeg(Math.atan2(dx, dy)), -max, max);
+  }
+
+  /**
+   * @param {Phaser.Types.Physics.Arcade.SpriteWithDynamicBody} bullet
+   * @param {number} angleDeg degrees from straight ahead, 0 = straight
+   * @returns {void}
+   */
+  #shoot(bullet, angleDeg) {
+    const radians = Phaser.Math.DegToRad(angleDeg);
+    const speed = this.#bulletConfig.speed;
+
+    bullet.enableBody(true, this.#gameObject.x, this.#gameObject.y + this.#bulletConfig.yOffset, true, true);
+    bullet.body.setVelocity(Math.sin(radians) * Math.abs(speed), -speed * Math.cos(radians));
+    bullet.setState(this.#bulletConfig.lifespan);
+    bullet.play('bullet');
+    bullet.setScale(0.8);
+    bullet.setBlendMode(Phaser.BlendModes.ADD);
+    bullet.body.setSize(14, 18);
+    bullet.setFlipY(this.#bulletConfig.flipY);
+    bullet.setRotation(this.#bulletConfig.flipY ? -radians : radians);
   }
 
   /**
@@ -130,6 +219,6 @@ export class WeaponComponent {
    * @param {Phaser.Types.Physics.Arcade.SpriteWithDynamicBody} bullet
    */
   destroyBullet(bullet) {
-    bullet.setState(0);
+    bullet.disableBody(true, true);
   }
 }

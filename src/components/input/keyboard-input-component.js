@@ -28,16 +28,20 @@ export class KeyboardInputComponent extends InputComponent {
   #onKeyDown(event) {
     switch (event.code) {
       case 'ArrowUp':
+      case 'KeyW':
         this._up = true;
         break;
       case 'ArrowDown':
+      case 'KeyS':
         this._down = true;
         break;
       case 'ArrowLeft':
+      case 'KeyA':
         this._left = true;
         this._right = false;
         break;
       case 'ArrowRight':
+      case 'KeyD':
         this._right = true;
         this._left = false;
         break;
@@ -50,15 +54,19 @@ export class KeyboardInputComponent extends InputComponent {
   #onKeyUp(event) {
     switch (event.code) {
       case 'ArrowUp':
+      case 'KeyW':
         this._up = false;
         break;
       case 'ArrowDown':
+      case 'KeyS':
         this._down = false;
         break;
       case 'ArrowLeft':
+      case 'KeyA':
         this._left = false;
         break;
       case 'ArrowRight':
+      case 'KeyD':
         this._right = false;
         break;
       case 'Space':

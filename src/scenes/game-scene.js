@@ -9,6 +9,8 @@ import { EnemyDestroyedComponent } from '../components/spawners/enemy-destroyed-
 import { Score } from '../objects/ui/score.js';
 import { Lives } from '../objects/ui/lives.js';
 import { AudioManager } from '../objects/audio-manager.js';
+import { getSafeArea } from '../utils/viewport.js';
+import { SpaceBackground } from '../objects/background/space-background.js';
 
 /**
  * Core Phaser 3 Scene that has the actual game play of our Space Shooter Game.
@@ -24,17 +26,18 @@ export class GameScene extends Phaser.Scene {
    * @returns {void}
    */
   create() {
-    // backgrounds
-    this.backgrounds = [
-      this.add.sprite(0, 0, 'bg1', 0).setOrigin(0, 1).setAlpha(0.7).play('bg1').setAngle(90),
-      this.add.sprite(0, 0, 'bg2', 0).setOrigin(0, 1).setAlpha(0.7).play('bg2').setAngle(90),
-      this.add.sprite(0, 0, 'bg3', 0).setOrigin(0, 1).setAlpha(0.7).play('bg3').setAngle(90),
-    ];
-    this.resizeBgs();
-    this.scale.on('resize', this.resizeBgs, this);
-
     // common components
     const eventBusComponent = new EventBusComponent();
+
+    // space background (parallax layers, drifting planets, streaks)
+    this.background = new SpaceBackground(this, eventBusComponent);
+
+    this.updateWorldBounds();
+    this.scale.on('resize', this.updateWorldBounds, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scale.off('resize', this.updateWorldBounds, this);
+      this.scale.off('resize', this.repositionUI, this);
+    });
 
     // spawn player
     const player = new Player(this, eventBusComponent);
@@ -46,8 +49,10 @@ export class GameScene extends Phaser.Scene {
       {
         interval: CONFIG.ENEMY_SCOUT_GROUP_SPAWN_INTERVAL,
         spawnAt: CONFIG.ENEMY_SCOUT_GROUP_SPAWN_START,
+        formations: CONFIG.ENEMY_SCOUT_FORMATIONS,
       },
-      eventBusComponent
+      eventBusComponent,
+      player
     );
     const fighterSpawner = new EnemySpawnerComponent(
       this,
@@ -55,8 +60,10 @@ export class GameScene extends Phaser.Scene {
       {
         interval: CONFIG.ENEMY_FIGHTER_GROUP_SPAWN_INTERVAL,
         spawnAt: CONFIG.ENEMY_FIGHTER_GROUP_SPAWN_START,
+        formations: CONFIG.ENEMY_FIGHTER_FORMATIONS,
       },
-      eventBusComponent
+      eventBusComponent,
+      player
     );
     new EnemyDestroyedComponent(this, eventBusComponent);
 
@@ -85,7 +92,7 @@ export class GameScene extends Phaser.Scene {
     );
     eventBusComponent.on(CUSTOM_EVENTS.ENEMY_INIT, (gameObject) => {
       // if name is an enemy from pool, add collision check for weapon group if needed
-      if (gameObject.constructor.name !== 'FighterEnemy') {
+      if (!gameObject.weaponGameObjectGroup) {
         return;
       }
 
@@ -96,11 +103,13 @@ export class GameScene extends Phaser.Scene {
           /** @type {Player}*/ playerGameObject,
           /** @type {Phaser.Types.Physics.Arcade.SpriteWithDynamicBody}*/ projectileGameObject
         ) => {
-          if (!playerGameObject.active) {
+          if (!playerGameObject.active || !projectileGameObject.active) {
             return;
           }
 
-          gameObject.weaponComponent.destroyBullet(projectileGameObject);
+          if (gameObject.weaponComponent) {
+            gameObject.weaponComponent.destroyBullet(projectileGameObject);
+          }
           playerGameObject.colliderComponent.collideWithEnemyProjectile();
         }
       );
@@ -156,15 +165,16 @@ export class GameScene extends Phaser.Scene {
     if (!this.score || !this.lives) {
       return;
     }
-    this.score.setPosition(this.cameras.main.width / 2, 20);
-    this.lives.setPosition(15, this.cameras.main.height - 20);
+    const safe = getSafeArea(this.scale);
+    this.score.setPosition(safe.right, safe.top + 10);
+    this.lives.setPosition(safe.left, safe.bottom - 5);
   }
 
-  resizeBgs() {
-    const { width, height } = this.cameras.main;
-    this.backgrounds.forEach((bg) => {
-      bg.displayWidth = width;
-      bg.displayHeight = height;
-    });
+  /**
+   * Keeps arcade physics world bounds equal to the current game size.
+   * @returns {void}
+   */
+  updateWorldBounds() {
+    this.physics.world.setBounds(0, 0, this.scale.width, this.scale.height);
   }
 }
