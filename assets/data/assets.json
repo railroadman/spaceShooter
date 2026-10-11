@@ -62,6 +62,16 @@
     ]
   },
   {
+    "path": "assets/images/ships",
+    "files": [
+      {
+        "type": "image",
+        "key": "boss_1",
+        "url": "boss_1.png"
+      }
+    ]
+  },
+  {
     "path": "assets/audio/ansimuz",
     "files": [
       {

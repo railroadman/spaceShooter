@@ -6,6 +6,7 @@ import { PlayerHorizontalMovementComponent } from '../components/movement/player
 import { PlayerVerticalMovementComponent } from '../components/movement/player-vertical-movement-component.js';
 import { WeaponComponent } from '../components/weapon/weapon-component.js';
 import * as CONFIG from '../config.js';
+import { getTextStyle } from './ui/ui-style.js';
 
 /**
  * Used to represent the players ship in our game. This class is responsible
@@ -96,6 +97,7 @@ export class Player extends Phaser.GameObjects.Container {
 
     // register custom events
     this.#eventBusComponent.on(CUSTOM_EVENTS.PLAYER_SPAWN, this.#spawn, this);
+    this.#eventBusComponent.on(CUSTOM_EVENTS.EXTRA_LIFE, this.#showExtraLife, this);
 
     // handle automatic call to update
     this.scene.events.on(Phaser.Scenes.Events.UPDATE, this.update, this);
@@ -155,6 +157,25 @@ export class Player extends Phaser.GameObjects.Container {
     this.#horizontalMovementComponent.update();
     this.#verticalMovementComponent.update();
     this.#weaponComponent.update(dt);
+  }
+
+  /**
+   * Floats the extra life text up from the ship.
+   * @returns {void}
+   */
+  #showExtraLife() {
+    const text = this.scene.add
+      .text(this.x, this.y - CONFIG.UI_POPUP_EDGE_MARGIN, CONFIG.UI_EXTRA_LIFE_TEXT, getTextStyle(this.scene, 'popup'))
+      .setOrigin(0.5)
+      .setDepth(CONFIG.UI_POPUP_DEPTH);
+    this.scene.tweens.add({
+      targets: text,
+      y: text.y - CONFIG.UI_POPUP_RISE,
+      alpha: 0,
+      duration: CONFIG.UI_POPUP_DURATION,
+      ease: 'Quad.easeOut',
+      onComplete: () => text.destroy(),
+    });
   }
 
   /**

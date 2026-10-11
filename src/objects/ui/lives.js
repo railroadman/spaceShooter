@@ -25,7 +25,7 @@ export class Lives extends Phaser.GameObjects.Container {
       const ship = scene.add
         .image(i * CONFIG.UI_LIVES_ICON_SPACING, 0, 'ship')
         .setScale(CONFIG.UI_LIVES_ICON_SCALE)
-        .setOrigin(0);
+        .setOrigin(0, 1);
       this.add(ship);
     }
 
@@ -51,10 +51,16 @@ export class Lives extends Phaser.GameObjects.Container {
     this.#eventBusComponent.on(CUSTOM_EVENTS.EXTRA_LIFE, () => {
       const ship = scene.add
         .image(this.#lives * CONFIG.UI_LIVES_ICON_SPACING, 0, 'ship')
-        .setScale(CONFIG.UI_LIVES_ICON_SCALE)
-        .setOrigin(0);
+        .setScale(0)
+        .setOrigin(0, 1);
       this.add(ship);
       this.#lives += 1;
+      scene.tweens.add({
+        targets: ship,
+        scale: CONFIG.UI_LIVES_ICON_SCALE,
+        duration: CONFIG.UI_LIFE_ICON_POP_DURATION,
+        ease: 'Back.easeOut',
+      });
     });
 
     this.#eventBusComponent.emit(CUSTOM_EVENTS.PLAYER_SPAWN);

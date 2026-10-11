@@ -13,13 +13,13 @@ export const PLAYER_SPAWN_OFFSET_Y = 32;
 // player config
 export const PLAYER_LIVES = 3;
 export const PLAYER_HEALTH = 4;
-export const PLAYER_EXTRA_LIFE_SCORE = 5000;
+export const PLAYER_EXTRA_LIFE_SCORE = 1000;
 export const PLAYER_BULLET_SPEED = 300;
 export const PLAYER_BULLET_INTERVAL = 300;
 export const PLAYER_BULLET_LIFESPAN = 3;
 export const PLAYER_BULLET_MAX_COUNT = 10;
-export const PLAYER_MOVEMENT_HORIZONTAL_VELOCITY = 90;
-export const PLAYER_MOVEMENT_VERTICAL_VELOCITY = 90;
+export const PLAYER_MOVEMENT_HORIZONTAL_VELOCITY = 105;
+export const PLAYER_MOVEMENT_VERTICAL_VELOCITY = 105;
 export const PLAYER_INVULNERABLE_DURATION = 3000;
 export const PLAYER_BLINK_INTERVAL = 100;
 export const PLAYER_BLINK_ALPHA = 0.25;
@@ -149,6 +149,7 @@ export const ENEMY_ZIGZAG_INTERVAL_MIN_SCALE = 0.7;
 export const ENEMY_ZIGZAG_INTERVAL_MAX_SCALE = 1.3;
 
 // ui config
+export const LEVEL_END_TITLE = 'LEVEL COMPLETE';
 export const UI_LIVES_ICON_SPACING = 20;
 export const UI_LIVES_ICON_SCALE = 0.6;
 export const UI_FONT_FAMILY = 'Orbitron, "Segoe UI", Arial, sans-serif';
@@ -177,6 +178,8 @@ export const UI_POPUP_DEPTH = 10;
 export const UI_POPUP_RISE = 40;
 export const UI_POPUP_DURATION = 700;
 export const UI_POPUP_EDGE_MARGIN = 30;
+export const UI_EXTRA_LIFE_TEXT = '+1';
+export const UI_LIFE_ICON_POP_DURATION = 250;
 
 // enemy behavior config
 // scout: picks a wave or zigzag pattern on every spawn, fires aimed bursts
@@ -216,3 +219,175 @@ export const ENEMY_FIGHTER_FORMATIONS = [
 ];
 export const FORMATION_SPACING_X = 50;
 export const FORMATION_STAGGER_DELAY = 700; // ms between ships of a 'v' formation
+
+// boss config: the whole first boss is tuned here
+// the boss shows up once, after a random moment of game time in [spawn.timeMin, spawn.timeMax]
+export const AUDIO_BOSS_EXPLOSION_VOLUME = 0.35;
+export const BOSS = {
+  // debug.spawnAt: ms of game time to force the boss for testing, null = random spawn.timeMin..timeMax
+  debug: { spawnAt: null },
+  // warningDuration: ms of WARNING before the boss flies in (normal enemies stop spawning at its start)
+  // resumeDelay: ms after the boss death until normal enemies spawn again
+  spawn: { timeMin: 300000, timeMax: 360000, warningDuration: 3000, resumeDelay: 4000 },
+  // scale: texture is 400px, ~0.56 gives a ship ~220px wide; body* = hitbox in px (smaller than the art);
+  // moveMargin: px from the screen edge to the boss center it never crosses; spawnY: start y above the screen
+  sprite: {
+    key: 'boss_1',
+    scale: 0.56,
+    flipY: false,
+    depth: 1,
+    bodyWidth: 120,
+    bodyHeight: 110,
+    bodyOffsetY: 0,
+    moveMargin: 115,
+    spawnY: -100,
+  },
+  // victory: the level ends `delay` ms after the boss is destroyed (LevelEndScene)
+  victory: { delay: 1500 },
+  health: 120, // hits to destroy it (a player bullet is 1 hit)
+  score: 5000,
+  // holdY: y where the boss hovers; fly-in speed = max(minSpeed, distance * gain) px/s; invulnerable while flying in
+  entry: { holdY: 150, minSpeed: 30, gain: 1.5 },
+  maxVerticalSpeed: 400,
+  // phase change: invulnerable for `duration` ms without shooting, white flash for `flashDuration` ms
+  transition: { duration: 1200, flashDuration: 200 },
+  hitFlashDuration: 50, // ms of white flash on every hit
+  flashColor: 0xffffff,
+  // muzzles: {x, y} px from the ship center (y > 0 = toward the player); speed < 0 = bullets fly down;
+  // angles: degrees of the volley (one bullet per angle and muzzle), burst: repeat volleys,
+  // aim: turn the volley toward the player (limited by maxAimAngle degrees)
+  weapons: {
+    main: {
+      muzzles: [{ x: -31, y: 62 }, { x: 31, y: 62 }],
+      speed: -230,
+      lifespan: 4,
+      maxCount: 24,
+      angles: [-14, 0, 14],
+      aim: true,
+      maxAimAngle: 25,
+    },
+    wingL: {
+      muzzles: [{ x: -59, y: 20 }],
+      speed: -260,
+      lifespan: 4,
+      maxCount: 12,
+      angles: [0],
+      burst: { count: 3, delay: 180 },
+      aim: true,
+      maxAimAngle: 30,
+    },
+    wingR: {
+      muzzles: [{ x: 59, y: 20 }],
+      speed: -260,
+      lifespan: 4,
+      maxCount: 12,
+      angles: [0],
+      burst: { count: 3, delay: 180 },
+      aim: true,
+      maxAimAngle: 30,
+    },
+    fan: {
+      muzzles: [{ x: 0, y: 66 }],
+      speed: -200,
+      lifespan: 4,
+      maxCount: 30,
+      angles: [-60, -40, -20, 0, 20, 40, 60],
+      burst: { count: 2, delay: 300 },
+      aim: false,
+    },
+    ring: {
+      muzzles: [{ x: 0, y: 20 }],
+      speed: -170,
+      lifespan: 4,
+      maxCount: 36,
+      angles: [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330],
+      aim: false,
+    },
+  },
+  // phases are played in order; a phase ends when the health fraction drops to hpTo (the last one: 0)
+  // move.type: 'sway' (period ms) | 'chase' (range px, smoothing 1/s) | 'dash' (chase + dash, see ENEMY_FIGHTER_DASH)
+  //   speed: horizontal px/s at full axis; returnGain: pull back to entry.holdY (1/s);
+  //   diveSpeed: px/s of the vertical push of a dash speed scale (wind-up pulls up, dash dives down)
+  // attacks: weapon id from `weapons`, interval ms between shots, firstDelay ms after the phase starts
+  // tint: ship tint (null = none), barColor: health bar color, clearBullets: remove boss bullets at phase start
+  phases: [
+    {
+      hpTo: 0.65,
+      move: { type: 'sway', period: 4200, speed: 60, returnGain: 2 },
+      attacks: [{ weapon: 'main', interval: 2200, firstDelay: 1200 }],
+      tint: null,
+      barColor: 0x4fd8ff,
+      clearBullets: false,
+    },
+    {
+      hpTo: 0.3,
+      move: { type: 'sway', period: 3000, speed: 85, returnGain: 2 },
+      attacks: [
+        { weapon: 'main', interval: 2000, firstDelay: 800 },
+        { weapon: 'wingL', interval: 3200, firstDelay: 1500 },
+        { weapon: 'wingR', interval: 3200, firstDelay: 3100 },
+      ],
+      tint: null,
+      barColor: 0xffd24f,
+      clearBullets: true,
+    },
+    {
+      hpTo: 0,
+      move: {
+        type: 'dash',
+        range: 140,
+        smoothing: 2.5,
+        speed: 90,
+        returnGain: 2,
+        diveSpeed: 220,
+        dash: {
+          cooldownMin: 4000,
+          cooldownMax: 6000,
+          windup: 600,
+          windupAxisFactor: 0.1,
+          windupSpeedScale: 0.6,
+          duration: 500,
+          axisBoost: 1.6,
+          speedBoost: 2.2,
+        },
+      },
+      attacks: [
+        { weapon: 'main', interval: 1700, firstDelay: 800 },
+        { weapon: 'fan', interval: 4200, firstDelay: 1500 },
+        { weapon: 'ring', interval: 5200, firstDelay: 3000 },
+      ],
+      tint: 0xff9a9a,
+      barColor: 0xff4f6a,
+      clearBullets: true,
+    },
+  ],
+  // death: explosions over the hull every explosionInterval ms for `duration` ms, then a camera shake
+  death: {
+    duration: 2200,
+    explosionInterval: 140,
+    spreadX: 90,
+    spreadY: 70,
+    scaleMin: 1.2,
+    scaleMax: 2.4,
+    shakeDuration: 600,
+    shakeIntensity: 0.012,
+  },
+  // health bar above the boss: anchorOffset = px above the boss center, minY = top limit in px
+  bar: {
+    depth: 9,
+    width: 170,
+    height: 9,
+    border: 2,
+    minY: 46,
+    anchorOffset: 95,
+    backColor: 0x04101c,
+    ghostColor: 0xffffff,
+    flashColor: 0xffffff,
+    ghostDelay: 400,
+    ghostSpeed: 0.6, // health fractions per second
+    flashDuration: 80,
+    fadeDuration: 500,
+  },
+  // warning text, yFraction = vertical position as a share of the screen height
+  warning: { text: 'WARNING', yFraction: 0.3, blinkPeriod: 350 },
+};

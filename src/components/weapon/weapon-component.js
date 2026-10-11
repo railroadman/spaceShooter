@@ -15,6 +15,7 @@ import { CUSTOM_EVENTS, EventBusComponent } from '../events/event-bus-component.
  * @property {{count: number, delay: number}} [burst] fire `count` volleys, `delay` ms apart
  * @property {Phaser.GameObjects.Container} [aimTarget] aim volleys at this object
  * @property {number} [maxAimAngle] limits aiming to this many degrees from straight (default 35)
+ * @property {{x: number, y: number}[]} [muzzles] bullet origins as offsets from the ship, one volley per muzzle (default: ship center, `yOffset`)
  */
 
 const STRAIGHT = [0];
@@ -140,16 +141,22 @@ export class WeaponComponent {
    */
   #fireVolley() {
     const angles = this.#bulletConfig.angles || STRAIGHT;
+    const muzzles = this.#bulletConfig.muzzles;
+    const muzzleCount = muzzles ? muzzles.length : 1;
     const aimAngle = this.#getAimAngle();
     let fired = false;
 
-    for (let i = 0; i < angles.length; i += 1) {
-      const bullet = this.#bulletGroup.getFirstDead();
-      if (bullet === undefined || bullet === null) {
-        break;
+    for (let m = 0; m < muzzleCount; m += 1) {
+      const offsetX = muzzles ? muzzles[m].x : 0;
+      const offsetY = muzzles ? muzzles[m].y : this.#bulletConfig.yOffset;
+      for (let i = 0; i < angles.length; i += 1) {
+        const bullet = this.#bulletGroup.getFirstDead();
+        if (bullet === undefined || bullet === null) {
+          return fired;
+        }
+        this.#shoot(bullet, angles[i] + aimAngle, offsetX, offsetY);
+        fired = true;
       }
-      this.#shoot(bullet, angles[i] + aimAngle);
-      fired = true;
     }
     return fired;
   }
@@ -179,13 +186,15 @@ export class WeaponComponent {
   /**
    * @param {Phaser.Types.Physics.Arcade.SpriteWithDynamicBody} bullet
    * @param {number} angleDeg degrees from straight ahead, 0 = straight
+   * @param {number} offsetX
+   * @param {number} offsetY
    * @returns {void}
    */
-  #shoot(bullet, angleDeg) {
+  #shoot(bullet, angleDeg, offsetX, offsetY) {
     const radians = Phaser.Math.DegToRad(angleDeg);
     const speed = this.#bulletConfig.speed;
 
-    bullet.enableBody(true, this.#gameObject.x, this.#gameObject.y + this.#bulletConfig.yOffset, true, true);
+    bullet.enableBody(true, this.#gameObject.x + offsetX, this.#gameObject.y + offsetY, true, true);
     bullet.body.setVelocity(Math.sin(radians) * Math.abs(speed), -speed * Math.cos(radians));
     bullet.setState(this.#bulletConfig.lifespan);
     bullet.play('bullet');

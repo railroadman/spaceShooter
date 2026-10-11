@@ -33,6 +33,11 @@ export class AudioManager {
         volume: CONFIG.AUDIO_EXPLOSION_VOLUME,
       });
     });
+    this.#eventBusComponent.on(CUSTOM_EVENTS.BOSS_EXPLOSION, () => {
+      this.#scene.sound.play('explosion', {
+        volume: CONFIG.AUDIO_BOSS_EXPLOSION_VOLUME,
+      });
+    });
     this.#eventBusComponent.on(CUSTOM_EVENTS.PLAYER_DESTROYED, () => {
       this.#scene.sound.play('explosion', {
         volume: CONFIG.AUDIO_EXPLOSION_VOLUME,

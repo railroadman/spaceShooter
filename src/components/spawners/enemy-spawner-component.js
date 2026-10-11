@@ -24,6 +24,8 @@ export class EnemySpawnerComponent {
   #formations;
   /** @type {boolean} */
   #disableSpawning;
+  /** @type {boolean} true from the boss warning until the boss is defeated */
+  #bossActive = false;
   /** @type {import('../../objects/player.js').Player} */
   #player;
 
@@ -70,6 +72,13 @@ export class EnemySpawnerComponent {
     eventBusComponent.on(CUSTOM_EVENTS.GAME_OVER, () => {
       this.#disableSpawning = true;
     });
+    eventBusComponent.on(CUSTOM_EVENTS.BOSS_WARNING, () => {
+      this.#bossActive = true;
+    });
+    eventBusComponent.on(CUSTOM_EVENTS.BOSS_DEFEATED, () => {
+      this.#bossActive = false;
+      this.#spawnAt = CONFIG.BOSS.spawn.resumeDelay;
+    });
   }
 
   /** @type {Phaser.GameObjects.Group} */
@@ -83,7 +92,7 @@ export class EnemySpawnerComponent {
    * @returns {void}
    */
   update(ts, dt) {
-    if (this.#disableSpawning) {
+    if (this.#disableSpawning || this.#bossActive) {
       return;
     }
 
@@ -127,7 +136,7 @@ export class EnemySpawnerComponent {
    * @returns {void}
    */
   #spawnOne(x) {
-    if (this.#disableSpawning) {
+    if (this.#disableSpawning || this.#bossActive) {
       return;
     }
     const enemy = this.#group.get(x, CONFIG.SPAWN_OFFSET_Y);

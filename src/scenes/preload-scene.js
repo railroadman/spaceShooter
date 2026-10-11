@@ -1,4 +1,5 @@
 import Phaser from '../lib/phaser.js';
+import * as CONFIG from '../config.js';
 
 /**
  * Responsible for loading all additional assets that are required in the `GameScene`
@@ -23,6 +24,8 @@ export class PreloadScene extends Phaser.Scene {
   create() {
     // loaded sprites are pixel art: keep them crisp; procedural background textures stay smooth
     Object.values(this.textures.list).forEach((texture) => texture.setFilter(Phaser.Textures.FilterMode.NEAREST));
+    // the boss is a large illustration scaled down, not pixel art: smooth filtering
+    this.textures.get(CONFIG.BOSS.sprite.key).setFilter(Phaser.Textures.FilterMode.LINEAR);
     this.#createAnimations();
     this.scene.start('GameScene');
   }

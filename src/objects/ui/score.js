@@ -5,6 +5,7 @@ import { getTextStyle } from './ui-style.js';
 const ENEMY_SCORES = {
   ScoutEnemy: CONFIG.ENEMY_SCOUT_SCORE,
   FighterEnemy: CONFIG.ENEMY_FIGHTER_SCORE,
+  BossEnemy: CONFIG.BOSS.score,
 };
 
 /**
