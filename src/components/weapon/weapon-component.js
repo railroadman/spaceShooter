@@ -143,12 +143,12 @@ export class WeaponComponent {
     const angles = this.#bulletConfig.angles || STRAIGHT;
     const muzzles = this.#bulletConfig.muzzles;
     const muzzleCount = muzzles ? muzzles.length : 1;
-    const aimAngle = this.#getAimAngle();
     let fired = false;
 
     for (let m = 0; m < muzzleCount; m += 1) {
       const offsetX = muzzles ? muzzles[m].x : 0;
       const offsetY = muzzles ? muzzles[m].y : this.#bulletConfig.yOffset;
+      const aimAngle = this.#getAimAngle(offsetX, offsetY);
       for (let i = 0; i < angles.length; i += 1) {
         const bullet = this.#bulletGroup.getFirstDead();
         if (bullet === undefined || bullet === null) {
@@ -162,19 +162,21 @@ export class WeaponComponent {
   }
 
   /**
-   * Angle in degrees from "straight" to the aim target, or 0 when there is no usable target.
-   * Targets behind the shooter are ignored and the angle is limited, so shots stay dodgeable.
+   * Angle in degrees from "straight" to the aim target as seen from the muzzle, or 0 when there is no
+   * usable target. Targets behind the muzzle are ignored and the angle is limited, so shots stay dodgeable.
+   * @param {number} offsetX muzzle x offset from the shooter
+   * @param {number} offsetY muzzle y offset from the shooter
    * @returns {number}
    */
-  #getAimAngle() {
+  #getAimAngle(offsetX, offsetY) {
     const target = this.#bulletConfig.aimTarget;
     if (!target || !target.active) {
       return 0;
     }
 
     const forward = -Math.sign(this.#bulletConfig.speed);
-    const dx = target.x - this.#gameObject.x;
-    const dy = (target.y - this.#gameObject.y) * forward;
+    const dx = target.x - (this.#gameObject.x + offsetX);
+    const dy = (target.y - (this.#gameObject.y + offsetY)) * forward;
     if (dy <= 0) {
       return 0;
     }

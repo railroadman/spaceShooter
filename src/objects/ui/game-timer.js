@@ -6,6 +6,8 @@ import { getTextStyle } from './ui-style.js';
  * update, so it stops while the scene is paused (the same clock the boss spawner uses).
  */
 export class GameTimer extends Phaser.GameObjects.Text {
+  /** @type {Phaser.Scene} kept apart from `this.scene`, which is cleared when the text is destroyed on shutdown */
+  #scene;
   /** @type {number} ms of game time */
   #elapsed = 0;
   /** @type {number} last shown whole second */
@@ -17,12 +19,13 @@ export class GameTimer extends Phaser.GameObjects.Text {
   constructor(scene) {
     super(scene, 0, 0, GameTimer.#format(0), getTextStyle(scene, 'body'));
 
+    this.#scene = scene;
     this.scene.add.existing(this);
     this.setOrigin(0.5);
 
-    this.scene.events.on(Phaser.Scenes.Events.UPDATE, this.#tick, this);
-    this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, this.#removeListeners, this);
-    this.scene.events.once(Phaser.Scenes.Events.DESTROY, this.#removeListeners, this);
+    this.#scene.events.on(Phaser.Scenes.Events.UPDATE, this.#tick, this);
+    this.#scene.events.once(Phaser.Scenes.Events.SHUTDOWN, this.#removeListeners, this);
+    this.#scene.events.once(Phaser.Scenes.Events.DESTROY, this.#removeListeners, this);
   }
 
   /**
@@ -53,6 +56,6 @@ export class GameTimer extends Phaser.GameObjects.Text {
    * @returns {void}
    */
   #removeListeners() {
-    this.scene.events.off(Phaser.Scenes.Events.UPDATE, this.#tick, this);
+    this.#scene.events.off(Phaser.Scenes.Events.UPDATE, this.#tick, this);
   }
 }
