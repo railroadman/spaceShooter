@@ -122,6 +122,7 @@ export class BossEnemy extends Phaser.GameObjects.Container {
           muzzles: config.muzzles,
           aimTarget: config.aim ? player : undefined,
           maxAimAngle: config.maxAimAngle,
+          ...config.bullet,
         },
         eventBusComponent
       );

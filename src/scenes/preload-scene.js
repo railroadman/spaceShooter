@@ -15,7 +15,8 @@ export class PreloadScene extends Phaser.Scene {
    * @returns {void}
    */
   preload() {
-    this.load.pack('asset_pack', 'assets/data/assets.json');
+    // the pack lists every asset: a stale browser-cached copy hides new assets (python http.server sends no cache headers)
+    this.load.pack('asset_pack', `assets/data/assets.json?v=${Date.now()}`);
   }
 
   /**
@@ -26,6 +27,8 @@ export class PreloadScene extends Phaser.Scene {
     Object.values(this.textures.list).forEach((texture) => texture.setFilter(Phaser.Textures.FilterMode.NEAREST));
     // the boss is a large illustration scaled down, not pixel art: smooth filtering
     this.textures.get(CONFIG.BOSS.sprite.key).setFilter(Phaser.Textures.FilterMode.LINEAR);
+    // weapon and pickup art is a downscaled illustration with soft glow: smooth filtering too
+    this.textures.get('weapons').setFilter(Phaser.Textures.FilterMode.LINEAR);
     this.#createAnimations();
     this.scene.start('GameScene');
   }

@@ -28,6 +28,8 @@ export class EnemySpawnerComponent {
   #bossActive = false;
   /** @type {import('../../objects/player.js').Player} */
   #player;
+  /** @type {import('../difficulty/difficulty-component.js').DifficultyComponent} */
+  #difficulty;
 
   /**
    * @param {Phaser.Scene} scene
@@ -38,10 +40,12 @@ export class EnemySpawnerComponent {
    * @param {{type: string, count: number}[]} spawnConfig.formations formations to pick from on every spawn
    * @param {EventBusComponent} eventBusComponent
    * @param {import('../../objects/player.js').Player} player
+   * @param {import('../difficulty/difficulty-component.js').DifficultyComponent} difficulty scales the spawn interval and the enemies
    */
-  constructor(scene, enemyClass, spawnConfig, eventBusComponent, player) {
+  constructor(scene, enemyClass, spawnConfig, eventBusComponent, player, difficulty) {
     this.#scene = scene;
     this.#player = player;
+    this.#difficulty = difficulty;
 
     // create group
     this.#group = this.#scene.add.group({
@@ -49,7 +53,7 @@ export class EnemySpawnerComponent {
       classType: enemyClass,
       runChildUpdate: true,
       createCallback: (/** @type {import('../../types/typedef.js').Enemy} */ enemy) => {
-        enemy.init(eventBusComponent, this.#player);
+        enemy.init(eventBusComponent, this.#player, this.#difficulty);
       },
     });
 
@@ -102,7 +106,7 @@ export class EnemySpawnerComponent {
     }
 
     this.#spawnFormation(Phaser.Math.RND.pick(this.#formations));
-    this.#spawnAt = this.#spawnInterval;
+    this.#spawnAt = this.#spawnInterval * this.#difficulty.stage.spawnScale;
   }
 
   /**

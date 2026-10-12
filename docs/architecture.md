@@ -46,7 +46,8 @@ Below is a breakdown of the most important classes and their roles.
 - **`Player.js`**: Represents the player's spaceship. It is composed of:
   - `KeyboardInputComponent`: Handles keyboard input for movement and firing.
   - `PlayerHorizontalMovementComponent` & `PlayerVerticalMovementComponent`: Manages the ship's movement.
-  - `WeaponComponent`: Controls the firing mechanism and manages projectiles.
+  - `WeaponComponent` (two of them: main and secondary slot): Controls the firing mechanism and manages projectiles.
+  - `PlayerLoadoutComponent`: Decides which weapon each `WeaponComponent` uses and at which level (see Weapons and Pickups).
   - `HealthComponent`: Tracks the player's health and lives.
 - **`ScoutEnemy.js` & `FighterEnemy.js`**: Represent the two types of enemy ships. They are composed of similar components to the player, but with different configurations and AI-driven input components (`BotScoutInputComponent`, `BotFighterInputComponent`).
 
@@ -56,7 +57,22 @@ Below is a breakdown of the most important classes and their roles.
 - **`MovementComponent.js` (and its subclasses)**: Manages the velocity and position of game objects.
 - **`WeaponComponent.js`**: A generic component for managing weapon systems, including firing rates, projectile pools, and bullet destruction.
 - **`HealthComponent.js`**: Manages the health of a game object, handling damage and death events.
+- **`ColliderComponent.js`**: Reacts to collisions. Besides damage it holds the shield charges of the player (`addShield`, absorbs hits, short `hitGrace` after each absorbed hit).
 - **`EventBusComponent.js`**: A simple event bus used for communication between different components and game objects, decoupling them from each other.
+
+### Weapons and Pickups
+
+Enemies drop pickup boxes; the player's weapons are data in `config.js` and are swapped at runtime.
+
+- **`PickupSpawnerComponent`** (`components/spawners/`): on `ENEMY_DESTROYED` rolls a drop (`DROP.chance` by enemy class name, kind by `DROP.weights`, weapon type from `DROP.mainWeapons` / `DROP.secondaryWeapons`) and owns the pooled boxes (`box_<kind>` frames of the `weapons` atlas). Boxes fall, spin, pulse, blink before they vanish. Touching one emits `PICKUP_COLLECTED {kind, type}`; the player applies it (heal, shield charges or `loadout.collect`). Regular enemies cannot drop again for `DROP.cooldown` ms after a drop (the boss always drops). Stops dropping after `GAME_OVER`.
+- **`PlayerLoadoutComponent`** (`components/weapon/`): main slot `{type, level}` plus an optional secondary slot (rockets), and the level reached by every type for the whole run. The same type again gains a level (max `WEAPONS.maxLevel`), another main type replaces the weapon and returns at its remembered level. Builds a `BulletConfig` from `CONFIG.WEAPONS`, applies it with `WeaponComponent.setConfig` and emits `WEAPON_CHANGED {slot, type, level}`. On `PLAYER_DESTROYED` all weapons are lost: the main slot returns to the start weapon, the secondary slot is emptied, remembered levels reset.
+- **`WeaponComponent`** takes per-weapon texture/frame, `scale`, `bodySize`, `damage`, `pierce`, `chain`, `hitEffect`; the bullet pool is sized once (`poolSize`) for the biggest level. Damage is stored on the bullet and passed to `ColliderComponent.collideWithEnemyProjectile(damage)` and `HealthComponent.hit(damage)`; piercing bullets hit each enemy once.
+- **Hit handling**: `game-scene.js` `hitEnemyWithBullet` handles every player bullet group (main, secondary) against scouts, fighters and the boss and emits `BULLET_HIT {x, y, effect, enemy, chain, explosion}`. Listeners: `HitEffectComponent` (pooled `<weapon>_hit_1..4` animation), `ChainLightningComponent` (jagged arcs to the nearest unvisited enemies, 2 / 4 / 6 targets by level, targets come from a getter built in `game-scene.js`), `ExplosionComponent` (area damage for rockets).
+- **`HomingComponent`**: steers rocket bullets toward the nearest enemy after a short straight flight and retargets when it dies.
+- **Weapons:** main plasma (parallel streams), shotgun (fan), laser (fast piercing beams), lightning (chain); secondary rockets (1 / 2 / 4, homing, area blast). Atlas frames: `<weapon>_shot`, `<weapon>_hit_1..4`, `box_<name>`. The atlas is built from `assets/images/weapons/*.png` by `tools/build-weapon-atlas.py` (one-off, not part of the game).
+- **UI:** `ui/weapon-slot.js` shows the icon and level pips of the main and the secondary slot above the lives; `objects/shield-effect.js` draws the shield bubble with a ripple on every absorbed hit. The player shows a popup text on every pickup and `AudioManager` plays a sound on `PICKUP_COLLECTED`.
+- **`DifficultyComponent`** (`components/difficulty/`): counts game time (paused with the scene) and returns the current `DIFFICULTY.stages` entry. Enemies read it on every spawn (`reset()`): extra health (`healthBonus`) and the weapon preset of the stage (`ENEMY_WEAPONS`: acid, railgun, wider spreads, shot interval x `fireScale`); `EnemySpawnerComponent` scales its group interval by `spawnScale`. Enemy bullets carry `damage` (`BULLET_ACID` 1, `BULLET_RAILGUN` 2); the boss has a `snipe` railgun weapon and 300 health.
+- **Config:** `WEAPONS` (types, levels, `debug`), `DROP` (chances, weights, `debug.forceAll`), `PICKUPS` (look, fall, lifetime), `SHIELD`, `CHAIN_LIGHTNING`, `UI_WEAPON_SLOT`, `AUDIO_PICKUP_VOLUME`.
 
 ### Viewport
 
@@ -90,7 +106,7 @@ Renderer is `Phaser.AUTO` (WebGL with Canvas fallback), `antialias` on. Loaded s
 4.  **`GameScene`** starts, creating the player, enemy spawners, and UI.
 5.  The player controls their ship, and enemies are spawned periodically by `EnemySpawnerComponent`.
 6.  Collisions are detected by the Phaser Arcade Physics engine.
-7.  `HealthComponent` and `Score` components listen to events (like `ENEMY_DESTROYED`) to update the game state.
+7.  `HealthComponent` and `Score` components listen to events (like `ENEMY_DESTROYED`) to update the game state. `PickupSpawnerComponent` also listens to it and may drop a box; the ship picks it up and `PlayerLoadoutComponent` swaps or upgrades the weapon.
 8.  If the player presses `ESC`, the `GameScene` is paused, and the `PauseScene` is launched.
 9.  If the player loses all lives, the `GameScene` is paused, and the `GameOverScene` is launched.
 

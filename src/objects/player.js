@@ -4,8 +4,10 @@ import { HealthComponent } from '../components/health/health-component.js';
 import { KeyboardInputComponent } from '../components/input/keyboard-input-component.js';
 import { PlayerHorizontalMovementComponent } from '../components/movement/player-horizontal-movement-component.js';
 import { PlayerVerticalMovementComponent } from '../components/movement/player-vertical-movement-component.js';
+import { PlayerLoadoutComponent } from '../components/weapon/player-loadout-component.js';
 import { WeaponComponent } from '../components/weapon/weapon-component.js';
 import * as CONFIG from '../config.js';
+import { ShieldEffect } from './shield-effect.js';
 import { getTextStyle } from './ui/ui-style.js';
 
 /**
@@ -19,6 +21,10 @@ export class Player extends Phaser.GameObjects.Container {
   #healthComponent;
   /** @type {WeaponComponent} */
   #weaponComponent;
+  /** @type {WeaponComponent} */
+  #secondaryWeaponComponent;
+  /** @type {PlayerLoadoutComponent} */
+  #loadoutComponent;
   /** @type {PlayerHorizontalMovementComponent} */
   #horizontalMovementComponent;
   /** @type {PlayerVerticalMovementComponent} */
@@ -77,27 +83,35 @@ export class Player extends Phaser.GameObjects.Container {
         maxVelocity: CONFIG.COMPONENT_MOVEMENT_VERTICAL_MAX_VELOCITY,
       }
     );
+    const startWeapon = PlayerLoadoutComponent.startWeapon();
     this.#weaponComponent = new WeaponComponent(
       this,
       this.#keyboardInputComponent,
-      {
-        speed: CONFIG.PLAYER_BULLET_SPEED,
-        interval: CONFIG.PLAYER_BULLET_INTERVAL,
-        lifespan: CONFIG.PLAYER_BULLET_LIFESPAN,
-        maxCount: CONFIG.PLAYER_BULLET_MAX_COUNT,
-        yOffset: CONFIG.PLAYER_BULLET_Y_OFFSET,
-        flipY: false,
-      },
+      PlayerLoadoutComponent.createBulletConfig(startWeapon.type, startWeapon.level),
       this.#eventBusComponent
+    );
+    this.#secondaryWeaponComponent = new WeaponComponent(
+      this,
+      this.#keyboardInputComponent,
+      PlayerLoadoutComponent.createBulletConfig(PlayerLoadoutComponent.secondaryType(), 1),
+      this.#eventBusComponent
+    );
+    this.#loadoutComponent = new PlayerLoadoutComponent(
+      this.scene,
+      this.#weaponComponent,
+      this.#eventBusComponent,
+      this.#secondaryWeaponComponent
     );
     this.#healthComponent = new HealthComponent(CONFIG.PLAYER_HEALTH);
     this.#colliderComponent = new ColliderComponent(this.#healthComponent, this.#eventBusComponent);
+    new ShieldEffect(this.scene, this, this.#eventBusComponent);
 
     this.#hide();
 
     // register custom events
     this.#eventBusComponent.on(CUSTOM_EVENTS.PLAYER_SPAWN, this.#spawn, this);
     this.#eventBusComponent.on(CUSTOM_EVENTS.EXTRA_LIFE, this.#showExtraLife, this);
+    this.#eventBusComponent.on(CUSTOM_EVENTS.PICKUP_COLLECTED, this.#onPickupCollected, this);
 
     // handle automatic call to update
     this.scene.events.on(Phaser.Scenes.Events.UPDATE, this.update, this);
@@ -123,6 +137,16 @@ export class Player extends Phaser.GameObjects.Container {
   /** @type {Phaser.GameObjects.Group} */
   get weaponGameObjectGroup() {
     return this.#weaponComponent.bulletGroup;
+  }
+
+  /** @type {Phaser.GameObjects.Group} */
+  get secondaryWeaponGameObjectGroup() {
+    return this.#secondaryWeaponComponent.bulletGroup;
+  }
+
+  /** @type {PlayerLoadoutComponent} */
+  get loadoutComponent() {
+    return this.#loadoutComponent;
   }
 
   /** @type {WeaponComponent} */
@@ -151,12 +175,38 @@ export class Player extends Phaser.GameObjects.Container {
     }
 
     this.#shipSprite.setFrame((CONFIG.PLAYER_HEALTH - this.#healthComponent.life).toString(10));
+    this.#colliderComponent.update(dt);
     this.#updateInvulnerability(dt);
     this.#keyboardInputComponent.update();
     this.#updateThrust();
     this.#horizontalMovementComponent.update();
     this.#verticalMovementComponent.update();
     this.#weaponComponent.update(dt);
+    if (this.#loadoutComponent.hasSecondary) {
+      this.#secondaryWeaponComponent.update(dt);
+    }
+  }
+
+  /**
+   * Applies a collected pickup to the ship and tells the player about it with a popup.
+   * @param {{kind: 'health' | 'shield' | 'weapon', type?: string}} pickup
+   * @returns {void}
+   */
+  #onPickupCollected(pickup) {
+    if (!this.active) {
+      return;
+    }
+    const texts = CONFIG.PICKUPS.texts;
+    if (pickup.kind === 'health') {
+      this.#healthComponent.heal(CONFIG.PICKUPS.healthAmount);
+      this.#showPopup(texts.health);
+    } else if (pickup.kind === 'shield') {
+      this.#colliderComponent.addShield(CONFIG.SHIELD.charges, CONFIG.SHIELD.hitGrace);
+      this.#showPopup(texts.shield);
+    } else if (pickup.type) {
+      this.#loadoutComponent.collect(pickup.type);
+      this.#showPopup(`${pickup.type.toUpperCase()} ${texts.levelPrefix}${this.#loadoutComponent.levelOf(pickup.type)}`);
+    }
   }
 
   /**
@@ -164,8 +214,17 @@ export class Player extends Phaser.GameObjects.Container {
    * @returns {void}
    */
   #showExtraLife() {
+    this.#showPopup(CONFIG.UI_EXTRA_LIFE_TEXT);
+  }
+
+  /**
+   * Floats a short text up from the ship.
+   * @param {string} message
+   * @returns {void}
+   */
+  #showPopup(message) {
     const text = this.scene.add
-      .text(this.x, this.y - CONFIG.UI_POPUP_EDGE_MARGIN, CONFIG.UI_EXTRA_LIFE_TEXT, getTextStyle(this.scene, 'popup'))
+      .text(this.x, this.y - CONFIG.UI_POPUP_EDGE_MARGIN, message, getTextStyle(this.scene, 'popup'))
       .setOrigin(0.5)
       .setDepth(CONFIG.UI_POPUP_DEPTH);
     this.scene.tweens.add({
@@ -231,6 +290,7 @@ export class Player extends Phaser.GameObjects.Container {
     this.#shipEngineThrusterSprite.setVisible(true);
     this.#shipSprite.setTexture('ship', 0);
     this.#healthComponent.reset();
+    this.#colliderComponent.clearShield();
     this.#invulnerableTime = CONFIG.PLAYER_INVULNERABLE_DURATION;
     this.#colliderComponent.isInvulnerable = true;
     this.setPosition(this.scene.scale.width / 2, this.scene.scale.height - CONFIG.PLAYER_SPAWN_OFFSET_Y);

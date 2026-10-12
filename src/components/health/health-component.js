@@ -30,6 +30,15 @@ export class HealthComponent {
   }
 
   /**
+   * Sets the life `reset()` restores, e.g. an enemy that gets tougher over time.
+   * @param {number} life
+   * @returns {void}
+   */
+  setStartingLife(life) {
+    this.#startingLife = life;
+  }
+
+  /**
    * @returns {void}
    */
   reset() {
@@ -38,18 +47,31 @@ export class HealthComponent {
   }
 
   /**
-   *
+   * @param {number} [damage] life taken away, default 1
    * @returns {void}
    */
-  hit() {
+  hit(damage = 1) {
     if (this.#isDead) {
       return;
     }
 
-    this.#currentLife -= 1;
+    this.#currentLife -= damage;
     if (this.#currentLife <= 0) {
       this.#isDead = true;
     }
+  }
+
+  /**
+   * Restores life, never above the starting life. Does nothing for a dead object.
+   * @param {number} [amount] life given back, default 1
+   * @returns {void}
+   */
+  heal(amount = 1) {
+    if (this.#isDead) {
+      return;
+    }
+
+    this.#currentLife = Math.min(this.#startingLife, this.#currentLife + amount);
   }
 
   /**

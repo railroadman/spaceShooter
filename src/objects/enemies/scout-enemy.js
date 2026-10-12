@@ -5,6 +5,7 @@ import { BotScoutInputComponent } from '../../components/input/bot-scout-input-c
 import { HorizontalMovementComponent } from '../../components/movement/horizontal-movement-component.js';
 import { VerticalMovementComponent } from '../../components/movement/vertical-movement-component.js';
 import { WeaponComponent } from '../../components/weapon/weapon-component.js';
+import { DifficultyComponent } from '../../components/difficulty/difficulty-component.js';
 import * as CONFIG from '../../config.js';
 
 export class ScoutEnemy extends Phaser.GameObjects.Container {
@@ -15,6 +16,8 @@ export class ScoutEnemy extends Phaser.GameObjects.Container {
   #healthComponent;
   #colliderComponent;
   #eventBusComponent;
+  #difficulty;
+  #player;
   #shipSprite;
   #shipEngineSprite;
   #weaponComponent;
@@ -71,9 +74,12 @@ export class ScoutEnemy extends Phaser.GameObjects.Container {
   /**
    * @param {EventBusComponent} eventBusComponent
    * @param {import('../../objects/player.js').Player} player
+   * @param {DifficultyComponent} difficulty
    */
-  init(eventBusComponent, player) {
+  init(eventBusComponent, player, difficulty) {
     this.#eventBusComponent = eventBusComponent;
+    this.#difficulty = difficulty;
+    this.#player = player;
     this.#inputComponent = new BotScoutInputComponent(player);
     this.#horizontalMovementComponent = new HorizontalMovementComponent(
       this,
@@ -88,17 +94,7 @@ export class ScoutEnemy extends Phaser.GameObjects.Container {
     this.#weaponComponent = new WeaponComponent(
       this,
       this.#inputComponent,
-      {
-        speed: CONFIG.ENEMY_SCOUT_BULLET_SPEED,
-        interval: CONFIG.ENEMY_SCOUT_BULLET_INTERVAL,
-        lifespan: CONFIG.ENEMY_SCOUT_BULLET_LIFESPAN,
-        maxCount: CONFIG.ENEMY_SCOUT_BULLET_MAX_COUNT,
-        yOffset: CONFIG.ENEMY_BULLET_Y_OFFSET,
-        flipY: true,
-        aimTarget: player,
-        maxAimAngle: CONFIG.ENEMY_SCOUT_AIM_MAX_ANGLE,
-        burst: { count: CONFIG.ENEMY_SCOUT_BURST_COUNT, delay: CONFIG.ENEMY_SCOUT_BURST_DELAY },
-      },
+      this.#createBulletConfig(),
       this.#eventBusComponent
     );
     this.#healthComponent = new HealthComponent(CONFIG.ENEMY_SCOUT_HEALTH);
@@ -108,12 +104,36 @@ export class ScoutEnemy extends Phaser.GameObjects.Container {
   }
 
   /**
+   * Bullet settings of the current difficulty stage.
+   * @returns {import('../../components/weapon/weapon-component.js').BulletConfig}
+   */
+  #createBulletConfig() {
+    return this.#difficulty.enemyWeapon(
+      'scout',
+      {
+        speed: CONFIG.ENEMY_SCOUT_BULLET_SPEED,
+        interval: CONFIG.ENEMY_SCOUT_BULLET_INTERVAL,
+        lifespan: CONFIG.ENEMY_SCOUT_BULLET_LIFESPAN,
+        maxCount: CONFIG.ENEMY_SCOUT_BULLET_MAX_COUNT,
+        yOffset: CONFIG.ENEMY_BULLET_Y_OFFSET,
+        flipY: true,
+        aimTarget: this.#player,
+        maxAimAngle: CONFIG.ENEMY_SCOUT_AIM_MAX_ANGLE,
+        burst: { count: CONFIG.ENEMY_SCOUT_BURST_COUNT, delay: CONFIG.ENEMY_SCOUT_BURST_DELAY },
+      },
+      this.#player
+    );
+  }
+
+  /**
    * @returns {void}
    */
   reset() {
     this.setActive(true);
     this.setVisible(true);
+    this.#healthComponent.setStartingLife(this.#difficulty.enemyHealth(CONFIG.ENEMY_SCOUT_HEALTH));
     this.#healthComponent.reset();
+    this.#weaponComponent.setConfig(this.#createBulletConfig());
     this.#inputComponent.reset();
     this.#verticalMovementComponent.reset();
     this.#horizontalMovementComponent.reset();

@@ -57,5 +57,12 @@ export class AudioManager {
         volume: CONFIG.AUDIO_SHOT_VOLUME,
       });
     });
+
+    // listen for pickup collected events
+    this.#eventBusComponent.on(CUSTOM_EVENTS.PICKUP_COLLECTED, () => {
+      this.#scene.sound.play('shot2', {
+        volume: CONFIG.AUDIO_PICKUP_VOLUME,
+      });
+    });
   }
 }

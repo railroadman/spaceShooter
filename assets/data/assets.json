@@ -72,6 +72,17 @@
     ]
   },
   {
+    "path": "assets/images/weapons",
+    "files": [
+      {
+        "type": "atlas",
+        "key": "weapons",
+        "textureURL": "weapons.png",
+        "atlasURL": "weapons.json"
+      }
+    ]
+  },
+  {
     "path": "assets/audio/ansimuz",
     "files": [
       {

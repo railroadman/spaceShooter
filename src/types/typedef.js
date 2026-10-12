@@ -17,14 +17,16 @@
  * @typedef ColliderComponent
  * @type {object}
  * @property {() => void} collideWithEnemyShip
- * @property {() => void} collideWithEnemyProjectile
+ * @property {(damage?: number) => void} collideWithEnemyProjectile
  */
 
 /**
  * @typedef HealthComponent
  * @type {object}
  * @property {() => void} reset
- * @property {() => void} hit
+ * @property {(damage?: number) => void} hit
+ * @property {(amount?: number) => void} heal
+ * @property {(life: number) => void} setStartingLife
  * @property {() => void} die
  * @property {number} life
  * @property {boolean} isDead
@@ -36,7 +38,7 @@
  * @property {ColliderComponent} colliderComponent
  * @property {() => void} reset
  * @property {HealthComponent} healthComponent
- * @property {(eventBusComponent: Phaser.Events.EventEmitter) => void} init
+ * @property {(eventBusComponent: Phaser.Events.EventEmitter, player?: unknown, difficulty?: unknown) => void} init
  * @property {string} shipAssetKey
  * @property {string} shipDestroyedAnimationKey
  *

@@ -5,6 +5,7 @@ import { BotFighterInputComponent } from '../../components/input/bot-fighter-inp
 import { HorizontalMovementComponent } from '../../components/movement/horizontal-movement-component.js';
 import { VerticalMovementComponent } from '../../components/movement/vertical-movement-component.js';
 import { WeaponComponent } from '../../components/weapon/weapon-component.js';
+import { DifficultyComponent } from '../../components/difficulty/difficulty-component.js';
 import * as CONFIG from '../../config.js';
 
 /**
@@ -33,6 +34,10 @@ export class FighterEnemy extends Phaser.GameObjects.Container {
   #weaponComponent;
   /** @type {EventBusComponent} */
   #eventBusComponent;
+  /** @type {DifficultyComponent} */
+  #difficulty;
+  /** @type {import('../../objects/player.js').Player} */
+  #player;
 
   /**
    * @param {Phaser.Scene} scene
@@ -96,9 +101,12 @@ export class FighterEnemy extends Phaser.GameObjects.Container {
   /**
    * @param {EventBusComponent} eventBusComponent
    * @param {import('../../objects/player.js').Player} player
+   * @param {DifficultyComponent} difficulty
    */
-  init(eventBusComponent, player) {
+  init(eventBusComponent, player, difficulty) {
     this.#eventBusComponent = eventBusComponent;
+    this.#difficulty = difficulty;
+    this.#player = player;
     this.#inputComponent = new BotFighterInputComponent(player);
     this.#verticalMovementComponent = new VerticalMovementComponent(
       this,
@@ -113,15 +121,7 @@ export class FighterEnemy extends Phaser.GameObjects.Container {
     this.#weaponComponent = new WeaponComponent(
       this,
       this.#inputComponent,
-      {
-        speed: CONFIG.ENEMY_FIGHTER_BULLET_SPEED,
-        interval: CONFIG.ENEMY_FIGHTER_BULLET_INTERVAL,
-        lifespan: CONFIG.ENEMY_FIGHTER_BULLET_LIFESPAN,
-        maxCount: CONFIG.ENEMY_FIGHTER_BULLET_MAX_COUNT,
-        yOffset: CONFIG.ENEMY_BULLET_Y_OFFSET,
-        flipY: true,
-        angles: CONFIG.ENEMY_FIGHTER_SPREAD_ANGLES,
-      },
+      this.#createBulletConfig(),
       this.#eventBusComponent
     );
     this.#healthComponent = new HealthComponent(CONFIG.ENEMY_FIGHTER_HEALTH);
@@ -131,12 +131,34 @@ export class FighterEnemy extends Phaser.GameObjects.Container {
   }
 
   /**
+   * Bullet settings of the current difficulty stage.
+   * @returns {import('../../components/weapon/weapon-component.js').BulletConfig}
+   */
+  #createBulletConfig() {
+    return this.#difficulty.enemyWeapon(
+      'fighter',
+      {
+        speed: CONFIG.ENEMY_FIGHTER_BULLET_SPEED,
+        interval: CONFIG.ENEMY_FIGHTER_BULLET_INTERVAL,
+        lifespan: CONFIG.ENEMY_FIGHTER_BULLET_LIFESPAN,
+        maxCount: CONFIG.ENEMY_FIGHTER_BULLET_MAX_COUNT,
+        yOffset: CONFIG.ENEMY_BULLET_Y_OFFSET,
+        flipY: true,
+        angles: CONFIG.ENEMY_FIGHTER_SPREAD_ANGLES,
+      },
+      this.#player
+    );
+  }
+
+  /**
    * @returns {void}
    */
   reset() {
     this.setActive(true);
     this.setVisible(true);
+    this.#healthComponent.setStartingLife(this.#difficulty.enemyHealth(CONFIG.ENEMY_FIGHTER_HEALTH));
     this.#healthComponent.reset();
+    this.#weaponComponent.setConfig(this.#createBulletConfig());
     this.#inputComponent.reset();
     this.#verticalMovementComponent.reset();
     this.#horizontalMovementComponent.reset();
