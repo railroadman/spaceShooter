@@ -83,6 +83,111 @@
     ]
   },
   {
+    "path": "assets/images/planets",
+    "files": [
+      {
+        "type": "image",
+        "key": "planet_alien",
+        "url": "planet_alien.png"
+      },
+      {
+        "type": "image",
+        "key": "planet_amethyst",
+        "url": "planet_amethyst.png"
+      },
+      {
+        "type": "image",
+        "key": "planet_copper",
+        "url": "planet_copper.png"
+      },
+      {
+        "type": "image",
+        "key": "planet_crystal",
+        "url": "planet_crystal.png"
+      },
+      {
+        "type": "image",
+        "key": "planet_desert",
+        "url": "planet_desert.png"
+      },
+      {
+        "type": "image",
+        "key": "planet_frozen_ringed",
+        "url": "planet_frozen_ringed.png"
+      },
+      {
+        "type": "image",
+        "key": "planet_ice",
+        "url": "planet_ice.png"
+      },
+      {
+        "type": "image",
+        "key": "planet_jungle",
+        "url": "planet_jungle.png"
+      },
+      {
+        "type": "image",
+        "key": "planet_lava",
+        "url": "planet_lava.png"
+      },
+      {
+        "type": "image",
+        "key": "planet_magma_blue",
+        "url": "planet_magma_blue.png"
+      },
+      {
+        "type": "image",
+        "key": "planet_moon",
+        "url": "planet_moon.png"
+      },
+      {
+        "type": "image",
+        "key": "planet_obsidian",
+        "url": "planet_obsidian.png"
+      },
+      {
+        "type": "image",
+        "key": "planet_ocean",
+        "url": "planet_ocean.png"
+      },
+      {
+        "type": "image",
+        "key": "planet_ocean_dark",
+        "url": "planet_ocean_dark.png"
+      },
+      {
+        "type": "image",
+        "key": "planet_red_giant",
+        "url": "planet_red_giant.png"
+      },
+      {
+        "type": "image",
+        "key": "planet_ringed",
+        "url": "planet_ringed.png"
+      },
+      {
+        "type": "image",
+        "key": "planet_rose_ringed",
+        "url": "planet_rose_ringed.png"
+      },
+      {
+        "type": "image",
+        "key": "planet_salt",
+        "url": "planet_salt.png"
+      },
+      {
+        "type": "image",
+        "key": "planet_storm",
+        "url": "planet_storm.png"
+      },
+      {
+        "type": "image",
+        "key": "planet_toxic",
+        "url": "planet_toxic.png"
+      }
+    ]
+  },
+  {
     "path": "assets/audio/ansimuz",
     "files": [
       {

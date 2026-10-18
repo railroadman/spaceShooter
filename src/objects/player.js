@@ -37,6 +37,10 @@ export class Player extends Phaser.GameObjects.Container {
   #isThrusting = false;
   /** @type {number} ms of invulnerability left */
   #invulnerableTime = 0;
+  /** @type {number} life on the last frame, a drop starts the hit flash */
+  #lastLife = CONFIG.PLAYER_HEALTH;
+  /** @type {number} ms of hit flash left */
+  #hitFlashTime = 0;
   /** @type {Phaser.GameObjects.Sprite} */
   #shipSprite;
   /** @type {Phaser.GameObjects.Sprite} */
@@ -167,6 +171,7 @@ export class Player extends Phaser.GameObjects.Container {
     if (this.#healthComponent.isDead) {
       this.#hide();
       this.setVisible(true);
+      this.#shipSprite.clearTint();
       this.#shipSprite.play({
         key: 'explosion',
       });
@@ -174,7 +179,10 @@ export class Player extends Phaser.GameObjects.Container {
       return;
     }
 
-    this.#shipSprite.setFrame((CONFIG.PLAYER_HEALTH - this.#healthComponent.life).toString(10));
+    // 4 damage frames, one per quarter of the health lost
+    const lost = 1 - this.#healthComponent.life / CONFIG.PLAYER_HEALTH;
+    this.#shipSprite.setFrame(Math.min(3, Math.floor(lost * 4)).toString(10));
+    this.#updateHitFlash(dt);
     this.#colliderComponent.update(dt);
     this.#updateInvulnerability(dt);
     this.#keyboardInputComponent.update();
@@ -198,8 +206,8 @@ export class Player extends Phaser.GameObjects.Container {
     }
     const texts = CONFIG.PICKUPS.texts;
     if (pickup.kind === 'health') {
-      this.#healthComponent.heal(CONFIG.PICKUPS.healthAmount);
-      this.#showPopup(texts.health);
+      this.#healthComponent.heal(CONFIG.PLAYER_HEALTH * CONFIG.HEALTH_PICKUP_HEAL_PERCENT);
+      this.#showPopup(`+${Math.round(CONFIG.HEALTH_PICKUP_HEAL_PERCENT * 100)}%`);
     } else if (pickup.kind === 'shield') {
       this.#colliderComponent.addShield(CONFIG.SHIELD.charges, CONFIG.SHIELD.hitGrace);
       this.#showPopup(texts.shield);
@@ -235,6 +243,27 @@ export class Player extends Phaser.GameObjects.Container {
       ease: 'Quad.easeOut',
       onComplete: () => text.destroy(),
     });
+  }
+
+  /**
+   * Fills the ship red for a moment when it loses health, so a hit is easy to notice.
+   * @param {number} dt
+   * @returns {void}
+   */
+  #updateHitFlash(dt) {
+    const life = this.#healthComponent.life;
+    if (life < this.#lastLife) {
+      this.#hitFlashTime = CONFIG.PLAYER_HIT_FLASH.duration;
+      this.#shipSprite.setTintFill(CONFIG.PLAYER_HIT_FLASH.color);
+    }
+    this.#lastLife = life;
+    if (this.#hitFlashTime <= 0) {
+      return;
+    }
+    this.#hitFlashTime -= dt;
+    if (this.#hitFlashTime <= 0) {
+      this.#shipSprite.clearTint();
+    }
   }
 
   /**
@@ -290,6 +319,9 @@ export class Player extends Phaser.GameObjects.Container {
     this.#shipEngineThrusterSprite.setVisible(true);
     this.#shipSprite.setTexture('ship', 0);
     this.#healthComponent.reset();
+    this.#lastLife = this.#healthComponent.life;
+    this.#hitFlashTime = 0;
+    this.#shipSprite.clearTint();
     this.#colliderComponent.clearShield();
     this.#invulnerableTime = CONFIG.PLAYER_INVULNERABLE_DURATION;
     this.#colliderComponent.isInvulnerable = true;

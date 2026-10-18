@@ -142,6 +142,8 @@ export class FighterEnemy extends Phaser.GameObjects.Container {
         interval: CONFIG.ENEMY_FIGHTER_BULLET_INTERVAL,
         lifespan: CONFIG.ENEMY_FIGHTER_BULLET_LIFESPAN,
         maxCount: CONFIG.ENEMY_FIGHTER_BULLET_MAX_COUNT,
+        damage: CONFIG.ENEMY_BULLET_DAMAGE,
+        hitEffect: CONFIG.ENEMY_BULLET_HIT_EFFECT,
         yOffset: CONFIG.ENEMY_BULLET_Y_OFFSET,
         flipY: true,
         angles: CONFIG.ENEMY_FIGHTER_SPREAD_ANGLES,

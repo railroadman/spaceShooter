@@ -29,6 +29,8 @@ export class PreloadScene extends Phaser.Scene {
     this.textures.get(CONFIG.BOSS.sprite.key).setFilter(Phaser.Textures.FilterMode.LINEAR);
     // weapon and pickup art is a downscaled illustration with soft glow: smooth filtering too
     this.textures.get('weapons').setFilter(Phaser.Textures.FilterMode.LINEAR);
+    // planet photos are scaled down illustrations: smooth filtering
+    CONFIG.BACKGROUND_PLANET_KEYS.forEach((key) => this.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR));
     this.#createAnimations();
     this.scene.start('GameScene');
   }

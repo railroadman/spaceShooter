@@ -12,13 +12,13 @@ export const PLAYER_SPAWN_OFFSET_Y = 32;
 
 // player config
 export const PLAYER_LIVES = 3;
-export const PLAYER_HEALTH = 4;
-export const PLAYER_EXTRA_LIFE_SCORE = 1000;
+export const PLAYER_HEALTH = 100;
+export const PLAYER_EXTRA_LIFE_SCORE = 5000;
 export const PLAYER_BULLET_SPEED = 300;
 export const PLAYER_BULLET_INTERVAL = 300;
 export const PLAYER_BULLET_LIFESPAN = 3;
-export const PLAYER_MOVEMENT_HORIZONTAL_VELOCITY = 105;
-export const PLAYER_MOVEMENT_VERTICAL_VELOCITY = 105;
+export const PLAYER_MOVEMENT_HORIZONTAL_VELOCITY = 125;
+export const PLAYER_MOVEMENT_VERTICAL_VELOCITY = 125;
 export const PLAYER_INVULNERABLE_DURATION = 3000;
 export const PLAYER_BLINK_INTERVAL = 100;
 export const PLAYER_BLINK_ALPHA = 0.25;
@@ -210,8 +210,8 @@ export const WEAPONS = {
 // debug.forceAll: every destroyed enemy drops a pickup (testing)
 export const DROP = {
   debug: { forceAll: false },
-  chance: { ScoutEnemy: 0.05, FighterEnemy: 0.2, BossEnemy: 1 },
-  cooldown: 12000,
+  chance: { ScoutEnemy: 0.065, FighterEnemy: 0.22, BossEnemy: 1 },
+  cooldown: 10000,
   weights: { health: 35, shield: 30, main: 25, secondary: 10 },
   mainWeapons: ['plasma', 'shotgun', 'laser', 'lightning'],
   secondaryWeapons: ['rocket'],
@@ -232,9 +232,11 @@ export const PICKUPS = {
   lifetime: 9000,
   blinkTime: 2500,
   blinkInterval: 120,
-  healthAmount: 1,
-  texts: { health: '+HP', shield: '+SHIELD', levelPrefix: 'LV' },
+  texts: { shield: '+SHIELD', levelPrefix: 'LV' },
 };
+
+// health pickup: share of PLAYER_HEALTH it restores (never above the max), the popup shows it as `+30%`
+export const HEALTH_PICKUP_HEAL_PERCENT = 0.3;
 
 // shield pickup: absorbs `charges` hits, then breaks; hits during `hitGrace` ms after an absorbed hit are ignored
 export const SHIELD = {
@@ -249,6 +251,13 @@ export const SHIELD = {
 // shared enemy config
 export const ENEMY_BODY_SIZE = 24;
 export const ENEMY_BULLET_Y_OFFSET = 10;
+// player health a plain enemy bullet takes (scout, fighter, boss guns without a `bullet` preset): 6 hits kill
+export const ENEMY_BULLET_DAMAGE = 17;
+// impact effect where an enemy bullet hits the ship (frames `<effect>_hit_1..4` of the `weapons` atlas);
+// a bullet preset (BULLET_ACID, BULLET_RAILGUN) sets its own `hitEffect`
+export const ENEMY_BULLET_HIT_EFFECT = 'plasma';
+// the ship is filled with `color` for `duration` ms when a bullet takes its health
+export const PLAYER_HIT_FLASH = { color: 0xff3b3b, duration: 120 };
 
 // audio config
 export const AUDIO_MUSIC_VOLUME = 0.05;
@@ -296,18 +305,43 @@ export const BACKGROUND_LAYERS = [
   { key: 'star_tile_mid', speed: 22, alpha: 0.75, depth: -90 },
   { key: 'star_tile_near', speed: 55, alpha: 0.8, depth: -70 },
 ];
+// planet photos: assets/images/planets/planet_<name>.png (256 px), loaded in assets.json as `planet_<name>`
+export const BACKGROUND_PLANET_NAMES = [
+  'alien',
+  'amethyst',
+  'copper',
+  'crystal',
+  'desert',
+  'frozen_ringed',
+  'ice',
+  'jungle',
+  'lava',
+  'magma_blue',
+  'moon',
+  'obsidian',
+  'ocean',
+  'ocean_dark',
+  'red_giant',
+  'ringed',
+  'rose_ringed',
+  'salt',
+  'storm',
+  'toxic',
+];
+export const BACKGROUND_PLANET_KEYS = BACKGROUND_PLANET_NAMES.map((name) => `planet_${name}`);
+// weight: relative chance of a spawn, a planet is never picked twice in a row
 export const BACKGROUND_PROPS = [
-  { key: 'nebula_0', scaleMin: 1.6, scaleMax: 2.8 },
-  { key: 'nebula_1', scaleMin: 1.6, scaleMax: 2.8 },
-  { key: 'nebula_2', scaleMin: 1.6, scaleMax: 2.8 },
-  { key: 'planet_0', scaleMin: 0.7, scaleMax: 1.5 },
-  { key: 'planet_1', scaleMin: 0.7, scaleMax: 1.5 },
-  { key: 'planet_2', scaleMin: 0.7, scaleMax: 1.5 },
+  { key: 'nebula_0', scaleMin: 1.6, scaleMax: 2.8, weight: 1 },
+  { key: 'nebula_1', scaleMin: 1.6, scaleMax: 2.8, weight: 1 },
+  { key: 'nebula_2', scaleMin: 1.6, scaleMax: 2.8, weight: 1 },
+  ...BACKGROUND_PLANET_KEYS.map((key) => ({ key, scaleMin: 0.35, scaleMax: 0.8, weight: 0.3 })),
 ];
 export const BACKGROUND_PROP_DEPTH = -95;
 export const BACKGROUND_PROP_FIRST_SPAWN = 1500;
 export const BACKGROUND_PROP_MAX_COUNT = 4;
-export const BACKGROUND_PROP_SPAWN_INTERVAL = 9000;
+export const BACKGROUND_PROP_SPAWN_INTERVAL = 24000;
+export const BACKGROUND_PROP_RETRY_DELAY = 1500; // ms before another try when a planet found no free place
+export const BACKGROUND_PLANET_GAP = 40; // min px between two planets, they never overlap
 export const BACKGROUND_PROP_SPEED_MIN = 12;
 export const BACKGROUND_PROP_SPEED_MAX = 30;
 export const BACKGROUND_PROP_ALPHA = 0.45;
@@ -344,16 +378,6 @@ export const BACKGROUND_NEBULA_BLOBS = 7;
 export const BACKGROUND_NEBULA_MIN_RADIUS = 50;
 export const BACKGROUND_NEBULA_MAX_RADIUS = 100;
 export const BACKGROUND_NEBULA_ALPHA = 0.35;
-export const BACKGROUND_PLANETS = [
-  { key: 'planet_0', rgb: [210, 120, 70] },
-  { key: 'planet_1', rgb: [70, 150, 190] },
-  { key: 'planet_2', rgb: [140, 110, 190] },
-];
-export const BACKGROUND_PLANET_SIZE = 128;
-export const BACKGROUND_PLANET_RADIUS = 44;
-export const BACKGROUND_PLANET_ATMOSPHERE_ALPHA = 0.35;
-export const BACKGROUND_PLANET_LIGHT_OFFSET = 16; // highlight shift from center px
-export const BACKGROUND_PLANET_LIGHT_BOOST = 60; // rgb added to the highlight
 export const BACKGROUND_STREAK_WIDTH = 2;
 export const BACKGROUND_STREAK_HEIGHT = 48;
 export const BACKGROUND_STREAK_TAIL_COLOR = 'rgba(180,210,255,0)';
@@ -396,7 +420,29 @@ export const UI_POPUP_EDGE_MARGIN = 30;
 export const UI_EXTRA_LIFE_TEXT = '+1';
 export const UI_LIFE_ICON_POP_DURATION = 250;
 // weapon slot of the HUD (above the lives): box icon scale, level pips radius and spacing, gap above the lives row
-export const UI_WEAPON_SLOT = { iconScale: 0.45, pipRadius: 3, pipSpacing: 9, pipOffsetX: 8, lifeRowGap: 34, rowGap: 40, dimAlpha: 0.25 };
+export const UI_WEAPON_SLOT = { iconScale: 0.28, pipRadius: 2, pipSpacing: 6, pipOffsetX: 6, lifeRowGap: 32, rowGap: 26, dimAlpha: 0.25 };
+// player health bar of the HUD, on the lives row right after the last life icon (gapX px from it)
+// colors: fill by health share (low below lowBelow, mid below midBelow); ghost trails a hit after ghostDelay ms
+// at ghostSpeed health fractions/s; a heal fills the bar at healSpeed fractions/s
+export const UI_PLAYER_HEALTH_BAR = {
+  depth: 9,
+  width: 90,
+  height: 6,
+  border: 2,
+  gapX: 8,
+  backColor: 0x04101c,
+  ghostColor: 0xffffff,
+  colors: { high: 0x4fff8a, mid: 0xffd24f, low: 0xff4f6a },
+  midBelow: 0.5,
+  lowBelow: 0.25,
+  ghostDelay: 400,
+  ghostSpeed: 0.6,
+  hitFlashColor: 0xffffff,
+  hitFlashDuration: 80,
+  healSpeed: 1,
+  healFlashColor: 0xc8ffd8,
+  healFlashDuration: 300,
+};
 
 // enemy behavior config
 // scout: picks a wave or zigzag pattern on every spawn, fires aimed bursts
@@ -424,18 +470,18 @@ export const ENEMY_FIGHTER_DASH = {
 export const ENEMY_FIGHTER_SPREAD_ANGLES = [-18, 0, 18];
 
 // enemy bullet looks (frames of the `weapons` atlas) and damage; a boss weapon or an enemy preset takes one as `bullet`
-export const BULLET_ACID = { textureKey: 'weapons', frame: 'acid_shot', scale: 0.5, bodySize: { width: 16, height: 16 }, damage: 1 };
-export const BULLET_RAILGUN = { textureKey: 'weapons', frame: 'railgun_shot', scale: 0.6, bodySize: { width: 10, height: 30 }, damage: 2 };
+export const BULLET_ACID = { textureKey: 'weapons', frame: 'acid_shot', scale: 0.5, bodySize: { width: 16, height: 16 }, damage: 20, hitEffect: 'acid' };
+export const BULLET_RAILGUN = { textureKey: 'weapons', frame: 'railgun_shot', scale: 0.6, bodySize: { width: 10, height: 30 }, damage: 34, hitEffect: 'railgun' };
 
 // enemy weapon presets: overrides on the base bullet settings of the enemy (ENEMY_SCOUT_BULLET_*, ENEMY_FIGHTER_BULLET_*)
 // bullet: look and damage (see BULLET_ACID), aim: turn the volley toward the player, speed < 0 = bullets fly down
 export const ENEMY_WEAPONS = {
   single: {},
   triple: { burst: { count: 3, delay: 200 } },
-  acid: { bullet: BULLET_ACID, speed: -210, burst: { count: 3, delay: 220 } },
+  acid: { bullet: BULLET_ACID, speed: -210, burst: { count: 2, delay: 220 } },
   spread3: {},
-  spread5: { angles: [-30, -15, 0, 15, 30] },
-  acid5: { bullet: BULLET_ACID, speed: -220, angles: [-24, -12, 0, 12, 24] },
+  spread5: { angles: [-24, 0, 24] },
+  acid5: { bullet: BULLET_ACID, speed: -220, angles: [-18, 0, 18] },
   railgun: { bullet: BULLET_RAILGUN, speed: -380, angles: [0], aim: true, maxAimAngle: 30, burst: { count: 2, delay: 250 } },
 };
 
@@ -447,9 +493,9 @@ export const DIFFICULTY = {
   debug: { startAt: 0 },
   stages: [
     { from: 0, healthBonus: 0, spawnScale: 1, fireScale: 1, scout: 'single', fighter: 'spread3' },
-    { from: 60000, healthBonus: 1, spawnScale: 0.85, fireScale: 0.85, scout: 'triple', fighter: 'spread5' },
-    { from: 150000, healthBonus: 1, spawnScale: 0.7, fireScale: 0.75, scout: 'acid', fighter: 'acid5' },
-    { from: 240000, healthBonus: 2, spawnScale: 0.6, fireScale: 0.65, scout: 'acid', fighter: 'railgun' },
+    { from: 60000, healthBonus: 2, spawnScale: 0.85, fireScale: 1.1, scout: 'triple', fighter: 'spread5' },
+    { from: 150000, healthBonus: 3, spawnScale: 0.65, fireScale: 1.2, scout: 'acid', fighter: 'acid5' },
+    { from: 240000, healthBonus: 4, spawnScale: 0.55, fireScale: 1.2, scout: 'acid', fighter: 'railgun' },
   ],
 };
 

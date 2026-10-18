@@ -1,0 +1,5 @@
+[
+  { "file": "baseline.json", "name": "Baseline (no changes, average bot)" },
+  { "file": "easy-drops.json", "name": "Example: more drops from fighters" },
+  { "file": "boss-early.json", "name": "Example: boss test (boss at 20 s, start with laser lvl 3)" }
+]

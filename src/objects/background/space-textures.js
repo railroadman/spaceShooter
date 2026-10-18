@@ -4,7 +4,7 @@ import * as CONFIG from '../../config.js';
 /**
  * Generates every procedural texture used by the space background.
  * Runs once (textures stay in the global texture manager, so scene restarts are free).
- * Keys come from the BACKGROUND_STAR_TILES / BACKGROUND_NEBULAE / BACKGROUND_PLANETS config, plus streak.
+ * Keys come from the BACKGROUND_STAR_TILES / BACKGROUND_NEBULAE config, plus streak. Planets are loaded images.
  * @param {Phaser.Scene} scene
  * @returns {void}
  */
@@ -17,7 +17,6 @@ export function generateSpaceTextures(scene) {
     createStarTile(scene, tile.key, tile.size, tile.count, tile.maxRadius, tile.brightness)
   );
   CONFIG.BACKGROUND_NEBULAE.forEach((nebula) => createNebula(scene, nebula.key, nebula.rgb));
-  CONFIG.BACKGROUND_PLANETS.forEach((planet) => createPlanet(scene, planet.key, planet.rgb));
 
   createStreak(scene, 'streak');
 }
@@ -88,40 +87,6 @@ function createNebula(scene, key, rgb) {
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, size, size);
   }
-  texture.refresh();
-}
-
-/**
- * Lit sphere with a dark limb and a faint atmosphere glow.
- * @param {Phaser.Scene} scene
- * @param {string} key
- * @param {number[]} rgb
- * @returns {void}
- */
-function createPlanet(scene, key, rgb) {
-  const size = CONFIG.BACKGROUND_PLANET_SIZE;
-  const center = size / 2;
-  const radius = CONFIG.BACKGROUND_PLANET_RADIUS;
-  const light = CONFIG.BACKGROUND_PLANET_LIGHT_OFFSET;
-  const boost = CONFIG.BACKGROUND_PLANET_LIGHT_BOOST;
-  const texture = scene.textures.createCanvas(key, size, size);
-  const ctx = texture.getContext();
-  const [r, g, b] = rgb;
-
-  const atmosphere = ctx.createRadialGradient(center, center, radius * 0.9, center, center, radius * 1.4);
-  atmosphere.addColorStop(0, `rgba(${r},${g},${b},${CONFIG.BACKGROUND_PLANET_ATMOSPHERE_ALPHA})`);
-  atmosphere.addColorStop(1, `rgba(${r},${g},${b},0)`);
-  ctx.fillStyle = atmosphere;
-  ctx.fillRect(0, 0, size, size);
-
-  const body = ctx.createRadialGradient(center - light, center - light, 4, center, center, radius);
-  body.addColorStop(0, `rgb(${Math.min(r + boost, 255)},${Math.min(g + boost, 255)},${Math.min(b + boost, 255)})`);
-  body.addColorStop(0.6, `rgb(${r},${g},${b})`);
-  body.addColorStop(1, `rgb(${r >> 2},${g >> 2},${b >> 2})`);
-  ctx.fillStyle = body;
-  ctx.beginPath();
-  ctx.arc(center, center, radius, 0, Math.PI * 2);
-  ctx.fill();
   texture.refresh();
 }
 

@@ -1,0 +1,5 @@
+{
+  "name": "Boss test",
+  "scenario": { "profiles": ["average"], "seeds": 10, "firstSeed": 1, "limitSec": 300, "concurrency": 3, "height": 640, "timeline": true },
+  "overrides": { "BOSS.debug.spawnAt": 20000, "DIFFICULTY.debug.startAt": 240000, "WEAPONS.debug.type": "laser", "WEAPONS.debug.level": 3 }
+}

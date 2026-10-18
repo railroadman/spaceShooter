@@ -10,8 +10,15 @@
 - **Glow:** additive blending for engines and bullets.
 - **Respawn Invulnerability:** the ship blinks and ignores damage for `PLAYER_INVULNERABLE_DURATION` (3 s) after every spawn.
 - **Extra Life:** +1 life each time the score crosses a multiple of `PLAYER_EXTRA_LIFE_SCORE` (5000); new `EXTRA_LIFE` event.
+- **Weapons and Pickups:** enemies drop health, shield and weapon boxes (fall, spin, pulse, blink before vanishing); drop chance by enemy class with a cooldown, the boss always drops.
+- **Player Weapons:** main slot (plasma, shotgun, laser, chain lightning) and secondary slot (homing rockets with area explosion), 3 levels each; levels are remembered per type and lost on death; per-weapon hit effects and a HUD with both slots.
+- **Shield:** absorbs `SHIELD.charges` (3) hits with a ripple effect.
+- **Difficulty Stages:** by game time enemies get more health, spawn faster and use stronger weapons (acid, railgun, wider spreads).
+- **Boss:** 300 health and a railgun attack.
+- **Weapons Atlas:** `weapons` atlas built by `tools/build-weapon-atlas.py`.
 
 ### Changed
+- Background planets are now 20 planet photos (`assets/images/planets/`, 256 px) instead of generated ones; they spawn at random, planets more often than nebulae (`BACKGROUND_PLANET_NAMES`, `weight` in `BACKGROUND_PROPS`).
 - Renderer switched from `Phaser.CANVAS` to `Phaser.AUTO`; smooth filtering for background, crisp filtering for sprites.
 - Hardcoded behavior values moved to `src/config.js`: player/enemy body size, depth, bullet offsets, respawn delay, death camera shake, audio volumes, lives icon size/spacing, zigzag interval spread, procedural background textures (stars, nebulae, planets, streak).
 - Scout horizontal velocity 40 -> 80; background layers dimmed for better ship/bullet contrast.

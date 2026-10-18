@@ -1,0 +1,5 @@
+{
+  "name": "More drops from fighters",
+  "scenario": { "profiles": ["average"], "seeds": 10, "firstSeed": 1, "limitSec": 600, "concurrency": 3, "height": 640, "timeline": false },
+  "overrides": { "DROP.chance.FighterEnemy": 0.4, "DROP.cooldown": 6000 }
+}

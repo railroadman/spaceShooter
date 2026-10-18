@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Balance sandbox</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #11131a;
+        --panel: #1a1d27;
+        --line: #2c3142;
+        --text: #dfe3ef;
+        --muted: #8b93aa;
+        --accent: #4fc3ff;
+        --ok: #5bd68a;
+        --bad: #ff6b6b;
+        --warn: #ffc233;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 13px/1.4 system-ui, sans-serif;
+      }
+      header {
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        gap: 16px;
+        align-items: baseline;
+      }
+      h1 {
+        font-size: 16px;
+        margin: 0;
+      }
+      h2 {
+        font-size: 13px;
+        margin: 0 0 8px;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      main {
+        display: grid;
+        grid-template-columns: minmax(320px, 440px) 1fr;
+        gap: 12px;
+        padding: 12px 16px;
+        align-items: start;
+      }
+      @media (max-width: 900px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+      }
+      section {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 10px 12px;
+        margin-bottom: 12px;
+      }
+      label {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin: 2px 10px 2px 0;
+        color: var(--muted);
+      }
+      input,
+      select,
+      button {
+        background: #0e1017;
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 3px 6px;
+        font: inherit;
+      }
+      input[type='number'] {
+        width: 72px;
+      }
+      input[type='text'] {
+        width: 100%;
+      }
+      button {
+        cursor: pointer;
+      }
+      button.primary {
+        background: var(--accent);
+        color: #00131d;
+        border-color: var(--accent);
+        font-weight: 600;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 2px 6px;
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
+      }
+      th {
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .params {
+        max-height: 420px;
+        overflow: auto;
+      }
+      .params td:first-child {
+        white-space: normal;
+        word-break: break-all;
+      }
+      .params input {
+        width: 90px;
+      }
+      .changed td {
+        background: rgba(255, 194, 51, 0.08);
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .pass {
+        color: var(--ok);
+      }
+      .low,
+      .high {
+        color: var(--bad);
+      }
+      .na {
+        color: var(--warn);
+      }
+      .bars {
+        display: flex;
+        align-items: flex-end;
+        gap: 2px;
+        height: 60px;
+      }
+      .bars div {
+        flex: 1;
+        background: var(--accent);
+        min-height: 1px;
+        position: relative;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 0;
+        margin-bottom: 6px;
+      }
+      #progress {
+        color: var(--muted);
+        margin-left: 8px;
+      }
+      #log {
+        color: var(--bad);
+        white-space: pre-wrap;
+      }
+      canvas {
+        width: 100%;
+        height: 160px;
+        background: #0e1017;
+        border: 1px solid var(--line);
+      }
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        font-size: 12px;
+      }
+      td.heat {
+        text-align: center;
+        color: #00131d;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Balance sandbox</h1>
+      <span class="muted">Runs the real game with a bot player, fast, in hidden frames. The game code is not modified.</span>
+    </header>
+    <main>
+      <div>
+        <section>
+          <h2>Scenario</h2>
+          <div class="row" id="profiles"></div>
+          <div class="row">
+            <label>Seeds <input type="number" id="seeds" value="10" min="1" max="500" /></label>
+            <label>First seed <input type="number" id="firstSeed" value="1" /></label>
+            <label>Time limit, s <input type="number" id="limit" value="600" min="10" /></label>
+          </div>
+          <div class="row">
+            <label>Parallel <input type="number" id="concurrency" value="3" min="1" max="8" /></label>
+            <label>World height <input type="number" id="height" value="640" min="560" max="960" /></label>
+            <label><input type="checkbox" id="timeline" checked /> keep timelines</label>
+          </div>
+          <div class="row">
+            <button class="primary" id="run">Run</button>
+            <button id="stop" disabled>Stop</button>
+            <span id="progress"></span>
+          </div>
+          <div id="log"></div>
+        </section>
+
+        <section>
+          <h2>Presets</h2>
+          <div class="row">
+            <select id="presetList"></select>
+            <button id="presetLoad">Load</button>
+            <button id="presetSave">Save to file</button>
+            <label>Open file <input type="file" id="presetFile" accept=".json" /></label>
+          </div>
+          <div class="muted" id="presetInfo"></div>
+        </section>
+
+        <section>
+          <h2>Config overrides <span class="muted" id="changedCount"></span></h2>
+          <div class="row">
+            <input type="text" id="search" placeholder="Filter parameters, e.g. plasma, DROP, ENEMY_SCOUT" />
+          </div>
+          <div class="params"><table id="params"></table></div>
+          <div class="row" style="margin-top: 6px">
+            <button id="resetAll">Reset all</button>
+            <button id="showDiff">Show diff for config.js</button>
+          </div>
+          <pre id="diff"></pre>
+        </section>
+
+        <section>
+          <h2>Sweep</h2>
+          <div class="row">
+            <label>Parameter A <input type="text" id="sweepA" list="paramList" placeholder="DROP.chance.FighterEnemy" style="width: 220px" /></label>
+          </div>
+          <div class="row">
+            <label>from <input type="number" id="aFrom" step="any" /></label>
+            <label>to <input type="number" id="aTo" step="any" /></label>
+            <label>step <input type="number" id="aStep" step="any" /></label>
+          </div>
+          <div class="row">
+            <label>Parameter B (optional) <input type="text" id="sweepB" list="paramList" style="width: 180px" /></label>
+          </div>
+          <div class="row">
+            <label>from <input type="number" id="bFrom" step="any" /></label>
+            <label>to <input type="number" id="bTo" step="any" /></label>
+            <label>step <input type="number" id="bStep" step="any" /></label>
+          </div>
+          <div class="row">
+            <label>Metric <select id="sweepMetric"></select></label>
+            <label>Profile <select id="sweepProfile"></select></label>
+          </div>
+          <div class="row">
+            <button class="primary" id="runSweep">Run sweep</button>
+            <span class="muted">uses Seeds and the other settings above</span>
+          </div>
+          <datalist id="paramList"></datalist>
+        </section>
+      </div>
+
+      <div>
+        <section id="resultsBox" hidden>
+          <h2>Results <span class="muted" id="resultsInfo"></span></h2>
+          <div class="row">
+            <button id="setBaseline">Set as baseline</button>
+            <button id="clearBaseline">Clear baseline</button>
+            <button id="exportJson">Export JSON</button>
+            <button id="exportCsv">Export CSV</button>
+            <span class="muted" id="baselineInfo"></span>
+          </div>
+          <div id="results"></div>
+        </section>
+        <section id="targetsBox" hidden>
+          <h2>Targets</h2>
+          <div id="targets"></div>
+        </section>
+        <section id="sweepBox" hidden>
+          <h2>Sweep result <span class="muted" id="sweepInfo"></span></h2>
+          <div id="sweepResult"></div>
+        </section>
+        <section id="runBox" hidden>
+          <h2>Run <span class="muted" id="runInfo"></span></h2>
+          <canvas id="timeline-canvas" width="900" height="320"></canvas>
+          <div class="muted">green: health x20, yellow: lives x20, red: enemies x10, grey: enemy bullets</div>
+        </section>
+      </div>
+    </main>
+    <script type="module" src="panel.js"></script>
+  </body>
+</html>

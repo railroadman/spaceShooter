@@ -1,0 +1,8 @@
+[
+  { "profile": "novice", "metric": "winRate", "min": 0.1, "max": 0.3, "label": "Novice wins sometimes" },
+  { "profile": "average", "metric": "winRate", "min": 0.4, "max": 0.6, "label": "Average player wins about half the time" },
+  { "profile": "average", "metric": "bossReachRate", "min": 0.5, "label": "Average player reaches the boss" },
+  { "profile": "average", "metric": "bossTtkMedianMs", "min": 40000, "max": 130000, "label": "Boss fight lasts 40-130 s" },
+  { "profile": "average", "metric": "weaponPickupsMean", "min": 2, "label": "At least 2 weapon pickups per run" },
+  { "profile": "expert", "metric": "winRate", "min": 0.6, "label": "Expert wins most runs" }
+]

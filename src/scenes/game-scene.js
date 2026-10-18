@@ -14,6 +14,7 @@ import { SpaceBackground } from '../objects/background/space-background.js';
 import { BossSpawnerComponent } from '../components/spawners/boss-spawner-component.js';
 import { PickupSpawnerComponent } from '../components/spawners/pickup-spawner-component.js';
 import { BossHealthBar } from '../objects/ui/boss-health-bar.js';
+import { PlayerHealthBar } from '../objects/ui/player-health-bar.js';
 import { GameTimer } from '../objects/ui/game-timer.js';
 import { WeaponSlot } from '../objects/ui/weapon-slot.js';
 import { HitEffectComponent } from '../components/weapon/hit-effect-component.js';
@@ -163,6 +164,11 @@ export class GameScene extends Phaser.Scene {
             return;
           }
 
+          eventBusComponent.emit(CUSTOM_EVENTS.BULLET_HIT, {
+            x: projectileGameObject.x,
+            y: projectileGameObject.y,
+            effect: projectileGameObject.getData('hitEffect'),
+          });
           if (gameObject.weaponComponent) {
             gameObject.weaponComponent.destroyBullet(projectileGameObject);
           }
@@ -248,6 +254,11 @@ export class GameScene extends Phaser.Scene {
             if (!playerGameObject.active || !projectileGameObject.active) {
               return;
             }
+            eventBusComponent.emit(CUSTOM_EVENTS.BULLET_HIT, {
+              x: projectileGameObject.x,
+              y: projectileGameObject.y,
+              effect: projectileGameObject.getData('hitEffect'),
+            });
             weaponComponent.destroyBullet(projectileGameObject);
             playerGameObject.colliderComponent.collideWithEnemyProjectile(projectileGameObject.getData('damage') || 1);
           }
@@ -260,6 +271,7 @@ export class GameScene extends Phaser.Scene {
     this.bossHealthBar = new BossHealthBar(this, eventBusComponent);
     this.timer = new GameTimer(this);
     this.lives = new Lives(this, eventBusComponent);
+    this.playerHealthBar = new PlayerHealthBar(this, player, this.lives);
     this.weaponSlot = new WeaponSlot(this, eventBusComponent, player.loadoutComponent, 'main');
     this.secondarySlot = new WeaponSlot(this, eventBusComponent, player.loadoutComponent.secondary, 'secondary');
     this.repositionUI();

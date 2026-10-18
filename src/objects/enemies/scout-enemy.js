@@ -115,6 +115,8 @@ export class ScoutEnemy extends Phaser.GameObjects.Container {
         interval: CONFIG.ENEMY_SCOUT_BULLET_INTERVAL,
         lifespan: CONFIG.ENEMY_SCOUT_BULLET_LIFESPAN,
         maxCount: CONFIG.ENEMY_SCOUT_BULLET_MAX_COUNT,
+        damage: CONFIG.ENEMY_BULLET_DAMAGE,
+        hitEffect: CONFIG.ENEMY_BULLET_HIT_EFFECT,
         yOffset: CONFIG.ENEMY_BULLET_Y_OFFSET,
         flipY: true,
         aimTarget: this.#player,
